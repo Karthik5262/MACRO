@@ -1,0 +1,368 @@
+--CHANGE UNITS IF REQUIRED
+MM DIST
+FINCH BORE
+
+-----------------------------------------------------------------
+--INITIALIZATION OF VARIABLES
+-----------------------------------------------------------------
+
+--STARTING ANGLE OF THE STAIR
+!OO = 90
+--ORIENTATION OF STAIR
+-- 1 FOR ANTI CLOCKWISE
+-- -1 FOR CLOCKWISE
+!SO = 1
+--DERIVE CYLINDER DIMENSIONS
+VAR !SPSTRPICK PICK
+--TANK OUTER RADIUS
+!TORINPUT = !SPSTRPICK[1].DBREF().DIA
+!TOR = (!TORINPUT.REAL() * 0.5)
+--TANK HEIGHT
+!TH = !SPSTRPICK[1].DBREF().HEI
+--TANK ELEVATION
+!TE = 400
+--STEP SIZE
+!SX = 1000
+!SY = 250
+!SZ = 25
+--STEP HEIGHT
+!SH = 200
+--CLEARANCE
+!SC = 100
+--MID PLATFORM HEIGHT FROM TANK BOTTOM
+!MPH[1] = 6000
+!MPH[2] = 12000
+!MPH[3] = 18000
+!MPH[4] = 24000
+!MPH[5] = 30000
+--MID PLATFORM WIDTH
+!MPW = 1000
+--POLE HEIGHT
+!PH = 1200
+--POLE DIAMETER
+!PD = 25
+--POLE SPHERE DIAMETER
+!PSD = 50
+--GUARD POLE NUMBER
+!GPN = 100
+
+-----------------------------------------------------------------
+--DRAWING STARTS HERE
+-----------------------------------------------------------------
+!NA = !!CE.NAME & '/SPIRALSTAIR'
+NEW SUBE $!NA
+!POS = !!CE.POSITION
+!EE = !POS.EAST
+!NN = !POS.NORTH
+!UU = !POS.UP
+
+!BBN = !SH
+!TTN = !SH + !PH
+!STH = !TH + !TE
+!STA = !OO
+!RO = !TOR + !SC + !SX
+!RM = !TOR + !SC + !SX / 2
+!AIS = ASIN(!SY / 2 / !RO)
+!AIP = ASIN(!MPW / 2 / !RO)
+!AITP = ASIN(!SX / 2 / !RO)
+!JJ = 1
+DO
+  IF (!BBN GE !STH) THEN
+    BREAK
+  ENDIF
+  !BBO = !BBN
+  !TTO = !TTN
+  !BBN = !BBN + !SH
+  !TTN = !TTN + !SH
+
+  IF ((!BBO GE !MPH[!JJ] + !TE) and (!BBO LT !MPH[!JJ] + !SH + !TE)) THEN
+    !STA2 = !STA + !SO * !AIS
+    !STA = !STA + !SO * !AIP
+    !EEES = !RM * COS(!STA)
+    !NNNS = !RM * SIN(!STA)
+    !UUUS = !BBO - !SZ / 2
+    !EEEP = (!RO - !PD / 2) * COS(!STA2)
+    !NNNP = (!RO - !PD / 2) * SIN(!STA2)
+    !UUUP = !BBO + !PH / 2
+    !EEEG = (!RO - !PD / 2) * COS(!STA)
+    !NNNG = (!RO - !PD / 2) * SIN(!STA)
+    !UUUG = !BBO + !PH
+    !LLL = !MPW - !SY
+    !EEESP = (!RO - !PD / 2) * COS(!STA2)
+    !NNNSP = (!RO - !PD / 2) * SIN(!STA2)
+    !UUUSP = !BBO + !PH
+    !HHH = !PSD / 2
+    NEW BOX POS E $!EEES N $!NNNS U $!UUUS
+    ORI Z IS U and X IS E $!STA N
+    XLEN $!SX
+    YLEN $!MPW
+    ZLEN $!SZ
+    NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+    DIA $!PD
+    HEI $!PH
+    NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+    ORI Z IS N $!STA W and X IS E $!STA N
+    DIA $!PD
+    HEI $!LLL
+    NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+    DIA $!PSD
+    HEI $!HHH
+    NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+    ORI Z IS D
+    DIA $!PSD
+    HEI $!HHH
+    !STA = !STA + !SO * !AIP
+    !STA2 = !STA - !SO * !AIS
+    !EEEP = (!RO - !PD / 2) * COS(!STA2)
+    !NNNP = (!RO - !PD / 2) * SIN(!STA2)
+    !UUUP = !BBO + !PH / 2
+    !EEESP = (!RO - !PD / 2) * COS(!STA2)
+    !NNNSP = (!RO - !PD / 2) * SIN(!STA2)
+    !UUUSP = !BBO + !PH
+    !HHH = !PSD / 2
+    NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+    DIA $!PD
+    HEI $!PH
+    NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+    DIA $!PSD
+    HEI $!HHH
+    NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+    ORI Z IS D
+    DIA $!PSD
+    HEI $!HHH
+    !EEEG = (!EEEP + (!RO - !PD / 2) * COS(!STA2 + 2 * !SO * !AIS)) / 2
+    !NNNG = (!NNNP + (!RO - !PD / 2) * SIN(!STA2 + 2 * !SO * !AIS)) / 2
+    !UUUG = !BBO + !PH + !SH / 2
+    !LLL = SQRT((!EEEP - (!RO - !PD / 2) * COS(!STA2 + 2 * !SO * !AIS)) * (!EEEP - (!RO - !PD / 2) * COS(!STA2 + 2 * !SO * !AIS)) + (!NNNP - (!RO - !PD / 2) * SIN(!STA2 + 2 * !SO * !AIS)) * (!NNNP - (!RO - !PD / 2) * SIN(!STA2 + 2 * !SO * !AIS)) + !SH * !SH)
+    !TET = !SO * ASIN(!SH / !LLL)
+    NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+    ORI Z IS N $!STA W and X IS E $!STA N
+    DIA $!PD
+    HEI $!LLL
+    ROTATE ABOUT E $!STA N BY $!TET
+    !JJ = !JJ + 1
+  ELSE
+    !STA = !STA + !SO * !AIS
+    !EEES = !RM * COS(!STA)
+    !NNNS = !RM * SIN(!STA)
+    !UUUS = !BBO - !SZ / 2
+    !EEEP = (!RO - !PD / 2) * COS(!STA)
+    !NNNP = (!RO - !PD / 2) * SIN(!STA)
+    !UUUP = !BBO + !PH / 2
+    !EEESP = (!RO - !PD / 2) * COS(!STA)
+    !NNNSP = (!RO - !PD / 2) * SIN(!STA)
+    !UUUSP = !BBO + !PH
+    !HHH = !PSD / 2
+    NEW BOX POS E $!EEES N $!NNNS U $!UUUS
+    ORI Z IS U and X IS E $!STA N
+    XLEN $!SX
+    YLEN $!SY
+    ZLEN $!SZ
+    NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+    DIA $!PD
+    HEI $!PH
+    NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+    DIA $!PSD
+    HEI $!HHH
+    NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+    ORI Z IS D
+    DIA $!PSD
+    HEI $!HHH
+    !EEEG = (!EEEP + (!RO - !PD / 2) * COS(!STA + 2 * !SO * !AIS)) / 2
+    !NNNG = (!NNNP + (!RO - !PD / 2) * SIN(!STA + 2 * !SO * !AIS)) / 2
+    !UUUG = !BBO + !PH + !SH / 2
+    !LLL = SQRT((!EEEP - (!RO - !PD / 2) * COS(!STA + 2 * !SO * !AIS)) * (!EEEP - (!RO - !PD / 2) * COS(!STA + 2 * !SO * !AIS)) + (!NNNP - (!RO - !PD / 2) * SIN(!STA + 2 * !SO * !AIS)) * (!NNNP - (!RO - !PD / 2) * SIN(!STA + 2 * !SO * !AIS)) + !SH * !SH)
+    !TET = !SO * ASIN(!SH / !LLL)
+    NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+    ORI Z IS N $!STA W and X IS E $!STA N
+    DIA $!PD
+    HEI $!LLL
+    ROTATE ABOUT E $!STA N BY $!TET
+    !STA = !STA + !SO * !AIS
+  ENDIF
+ENDDO
+
+!STA2 = !STA + !SO * !AIS
+!STA = !STA + !SO * !AITP
+!STA3 = !STA + !SO * !AITP
+!EEES = !RM * COS(!STA)
+!NNNS = !RM * SIN(!STA)
+!UUUS = !STH - !SZ / 2
+NEW BOX POS E $!EEES N $!NNNS U $!UUUS
+ORI Z IS U and X IS E $!STA N
+XLEN $!SX
+YLEN $!SX
+ZLEN $!SZ
+
+!TT = SQRT((!SX/ 2 - !PD / 2) * (!SX/ 2 - !PD / 2) + (!SX - !SY) / 2 * (!SX - !SY) / 2)
+!TTET = ATAN((!SX - !PD) / (!SX - !SY))
+!EEEP = !EEES + !TT * COS(!STA + !SO * !TTET)
+!NNNP = !NNNS + !TT * SIN(!STA + !SO * !TTET)
+!UUUP = !STH + !PH / 2
+!EEESP = !EEES + !TT * COS(!STA + !SO * !TTET)
+!NNNSP = !NNNS + !TT * SIN(!STA + !SO * !TTET)
+!UUUSP = !STH + !PH
+!HHH = !PSD / 2
+NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+DIA $!PD
+HEI $!PH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+DIA $!PSD
+HEI $!HHH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+ORI Z IS D
+DIA $!PSD
+HEI $!HHH
+!EEEP = !EEES + !TT * COS(180 + !STA - !SO * !TTET)
+!NNNP = !NNNS + !TT * SIN(180 + !STA - !SO * !TTET)
+!UUUP = !STH + !PH / 2
+!EEESP = !EEES + !TT * COS(180 + !STA - !SO * !TTET)
+!NNNSP = !NNNS + !TT * SIN(180 + !STA - !SO * !TTET)
+!UUUSP = !STH + !PH
+!HHH = !PSD / 2
+NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+DIA $!PD
+HEI $!PH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+DIA $!PSD
+HEI $!HHH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+ORI Z IS D
+DIA $!PSD
+HEI $!HHH
+!EEEG = !EEES + (!SX - !PD) / 2 * COS(!SO * 90 + !STA)
+!NNNG = !NNNS + (!SX - !PD) / 2 * SIN(!SO * 90 + !STA)
+!UUUG = !STH + !PH
+NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+ORI Z IS E $!STA N
+DIA $!PD
+HEI $!SX
+!TT = SQRT((!SX/ 2 - !PD / 2) * (!SX/ 2 - !PD / 2) + (!SX/ 2 - !PD / 2) * (!SX/ 2 - !PD / 2))
+!EEESP = !EEES + !TT * COS(!STA + !SO * 45)
+!NNNSP = !NNNS + !TT * SIN(!STA + !SO * 45)
+!UUUSP = !STH + !PH
+!HHH = !PSD / 2
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+DIA $!PSD
+HEI $!HHH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+ORI Z IS D
+DIA $!PSD
+HEI $!HHH
+!EEESP = !EEES + !TT * COS(180 + !STA - !SO * 45)
+!NNNSP = !NNNS + !TT * SIN(180 + !STA - !SO * 45)
+!UUUSP = !STH + !PH
+!HHH = !PSD / 2
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+DIA $!PSD
+HEI $!HHH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+ORI Z IS D
+DIA $!PSD
+HEI $!HHH
+!EEEP = (!RO - !PD / 2) * COS(!STA2)
+!NNNP = (!RO - !PD / 2) * SIN(!STA2)
+!UUUP = !STH + !PH / 2
+!EEESP = (!RO - !PD / 2) * COS(!STA2)
+!NNNSP = (!RO - !PD / 2) * SIN(!STA2)
+!UUUSP = !STH + !PH
+!HHH = !PSD / 2
+NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+DIA $!PD
+HEI $!PH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+DIA $!PSD
+HEI $!HHH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+ORI Z IS D
+DIA $!PSD
+HEI $!HHH
+
+!EEEG = (!RO - !PD / 2) * COS(!STA + !SO * !AIS / 2)
+!NNNG = (!RO - !PD / 2) * SIN(!STA + !SO * !AIS / 2)
+!UUUG = !STH + !PH
+!LLL = !SX - !SY /  2
+NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+ORI Z IS N $!STA W and X IS E $!STA N
+DIA $!PD
+HEI $!LLL
+
+!STA = !STA + !SO * !AITP
+!STA2 = !STA - !SO * !AIS
+!EEEP = (!RO - !PD / 2) * COS(!STA2)
+!NNNP = (!RO - !PD / 2) * SIN(!STA2)
+!UUUP = !STH + !PH / 2
+!EEESP = (!RO - !PD / 2) * COS(!STA2)
+!NNNSP = (!RO - !PD / 2) * SIN(!STA2)
+!UUUSP = !STH + !PH
+!HHH = !PSD / 2
+NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+DIA $!PD
+HEI $!PH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+DIA $!PSD
+HEI $!HHH
+NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+ORI Z IS D
+DIA $!PSD
+HEI $!HHH
+
+OWN
+BY E $!EE N $!NN U $!UU
+OWN
+
+!NA = !!CE.NAME & '/GUARDRAIL'
+NEW SUBE $!NA
+
+!STA = !STA - !SO * !AITP
+!AIG = (2 * 3.1415926536 * !TOR - !SX) / !TOR * 180 / 3.1415926536 / !GPN
+!TT = SQRT((!SX/ 2 - !PD / 2) * (!SX/ 2 - !PD / 2) + (!SX/ 2 - !PD / 2) * (!SX/ 2 - !PD / 2))
+!ETSP = !EEES + !TT * COS(180 + !STA - !SO * 45)
+!NTSP = !NNNS + !TT * SIN(180 + !STA - !SO * 45)
+!STA = !STA + !SO * !AITP
+!STA = !STA + !SO * !AIS + !SO * !AIG / 2
+!ETTSP = (!TOR - !PD / 2) * COS(!STA)
+!NTTSP = (!TOR - !PD / 2) * SIN(!STA)
+!EEEG = (!ETSP + !ETTSP) / 2
+!NNNG = (!NTSP + !NTTSP) / 2
+!UUUG = !STH + !PH
+!LLL = SQRT((!ETSP - !ETTSP) * (!ETSP - !ETTSP) + (!NTSP - !NTTSP) * (!NTSP - !NTTSP))
+!TT = ATANT((!NTSP - !NTTSP), (!ETSP - !ETTSP))
+NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+ORI Z IS E $!TT N
+DIA $!PD
+HEI $!LLL
+DO !II FROM 0 TO !GPN - 1
+  !EEEP = (!TOR - !PD / 2) * COS(!STA)
+  !NNNP = (!TOR - !PD / 2) * SIN(!STA)
+  !UUUP = !STH + !PH / 2
+  NEW CYL POS E $!EEEP N $!NNNP U $!UUUP
+  DIA $!PD
+  HEI $!PH
+  !EEESP = (!TOR - !PD / 2) * COS(!STA)
+  !NNNSP = (!TOR - !PD / 2) * SIN(!STA)
+  !UUUSP = !STH + !PH
+  NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+  DIA $!PSD
+  HEI $!HHH
+  NEW DISH POS E $!EEESP N $!NNNSP U $!UUUSP
+  ORI Z IS D
+  DIA $!PSD
+  HEI $!HHH
+  !EEEG = (!EEESP + (!TOR - !PD / 2) * COS(!STA + !SO * !AIG)) / 2
+  !NNNG = (!NNNSP + (!TOR - !PD / 2) * SIN(!STA + !SO * !AIG)) / 2
+  !UUUG = !STH + !PH
+  !LLL = SQRT((!EEESP - (!TOR - !PD / 2) * COS(!STA + !SO * !AIG)) * (!EEESP - (!TOR - !PD / 2) * COS(!STA + !SO * !AIG)) + (!NNNSP - (!TOR - !PD / 2) * SIN(!STA + !SO * !AIG)) * (!NNNSP - (!TOR - !PD / 2) * SIN(!STA + !SO * !AIG)))
+  !STA2 = !STA + !SO * !AIG / 2
+  IF (!II LT !GPN - 1) THEN
+    NEW CYL POS E $!EEEG N $!NNNG U $!UUUG
+    ORI Z IS N $!STA2 W and X IS E $!STA2 N
+    DIA $!PD
+    HEI $!LLL
+  ENDIF
+  !STA = !STA + !SO * !AIG
+ENDDO
+
+OWN
+BY E $!EE N $!NN U $!UU
+OWN
