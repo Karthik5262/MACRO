@@ -1,0 +1,291 @@
+setup form !!MRTsupportform dialog size 80 0
+bar
+title |MRT Support Form ver. Oct 2024|
+
+-----  
+
+!this.bar.add('Docs','menu1')
+menu.menu1
+
+!this.menu1.add('callback','PS Standard','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\1. Standards\1.6 Issued For Design (D03)\Moretec Pipe Support Standards (D03 Piping Master).pdf"&|')
+!this.menu1.add('callback','Job Notes (General)','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\2. Job Notes\PS01 - General\PS01 - Pipe Support Job Notes (General) - Rev B.pdf"&|')
+!this.menu1.add('callback','Job Notes (Non-crit)','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\2. Job Notes\PS02 - Non-crit\PS02 - Pipe Support Job Notes (Non-Crit).pdf"&|')
+!this.menu1.add('callback','Job Notes (Critical)','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\2. Job Notes\PS03 - Critical\PS03 - Pipe Support Job Notes (Critical).pdf"&|')
+!this.menu1.add('callback','E3D Work Instruction','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\3. Work Instructions\3.1 E3D Work Instruction\MRT E3D Supports Design (Rev A).pdf"&|')
+!this.menu1.add('callback','OE Work Instruction','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\3. Work Instructions\3.2 OE Work Instruction\OE Work Instruction - Supports (Rev E).pdf"&|')
+!this.menu1.add('callback','GNLR01','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\1. Standards\1.5 Issued For Design (D02)\GNLR01.pdf"&|')
+!this.menu1.add('callback','GNLR02-05','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\1. Standards\1.5 Issued For Design (D02)\GNLR02-05.pdf"&|')
+!this.menu1.add('callback','Wall Thickness Chart','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\2. Job Notes\MRT Wall Thickness Chart.xlsx"&|')
+
+-----  
+
+!this.bar.add('Tools','menu2')
+menu.menu2
+
+!this.menu2.add('callback','Pipe Spans','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\4. Tools\4.1 Span Charts\MRT Span Chart.xlsx"&|')
+!this.menu2.add('callback','Frame Selector - GNLR01','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\4. Tools\4.2 Frame Selector\MRT Frame Selector (GNLR01).xlsx"&|')
+!this.menu2.add('callback','Weld Proximity','SYSCOM |"\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\4. Tools\4.3 Weld Proximity\MRT Weld Proximity.xlsx"&|')
+
+-----  
+
+!this.bar.add('Forms','menu3')
+menu.menu3
+
+!this.menu3.add('callback','Members','CALLIB UFORMS MEMB _CDCMEMBER FREE')
+!this.menu3.add('callback','Lists','SHOW !!CDCLIST')
+!this.menu3.add('callback','Support Checker','show !!KBRSupportChecker')
+!this.menu3.add('callback','Frame Design','show !!MRTFrameDesign')
+!this.menu3.add('callback','BasePlates & ClosurePlates','show !!kbrbaseplates')
+!this.menu3.add('callback','Gusset Plates','show !!KBRGussetplates')
+--!this.menu3.add('callback','Support Anci Checker','show !!KBRSupportChecker')
+--!this.menu3.add('callback','Support Control Form','show !!ACESupportControlForm')
+--!this.menu3.add('callback','Loads Form','show !!anciloadsform')
+--!this.menu3.add('callback','Drawlist & ADP Form','show !!kbrmdsmdsadp')
+--!this.menu3.add('callback','Flange Bolts','show !!kbrshowbolts')
+
+-----
+
+!this.bar.add('Calcs','menu4')
+menu.menu4
+
+!this.menu4.add('callback','Welded Shoe Calc','show !!kbrweldedshoe')
+!this.menu4.add('callback','Trunnion Calc','show !!kbrtrunnion')
+     
+-----
+
+!this.bar.add('Functions','menu5')
+menu.menu5
+!this.menu5.add('callback','Unlock All Suppo (Consup)','!!SetConsuppCTLAdminlock(false)')
+!this.menu5.add('callback','Lock All Supp (Consup)','!!SetConsuppCTLAdminlock(true)')
+!this.menu5.add('callback','Run Tag Codes','!!MDSCUSTOMERCODE(!!CE)')
+!this.menu5.add('callback','Reset SUPC Position','!!KBRSupcPos()')
+!this.menu5.add('callback','Set Stru Pos to Support','!!SetStruPosToPP(!!ce)')
+
+
+-----
+
+!this.bar.add('Reports','menu6')
+menu.menu6
+!this.menu6.add('callback','New Report','CALLIBR XREPDEF')
+!this.menu6.add('callback','Modify Report','CALLIBR XREPSEL MODIFY')
+
+-----
+
+!this.bar.add('Stress','menu7')
+menu.menu7
+
+!this.menu7.add('callback','Stress Data Form','SHOW !!STRESSDATAV2')
+!this.menu7.add('callback','Stress Calc Folder','SYSCOM |%WINDIR%\explorer "\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\9._Stress_Calcs"&|')
+!this.menu7.add('callback','Nodes ON','!!KBRStressNodesOn(|DISP|)')
+!this.menu7.add('callback','Nodes OFF','UNMARK ALL')
+
+-----
+
+!this.bar.add('Springs','menu8')
+menu.menu8
+
+!this.menu8.add('callback','Checking Folder','SYSCOM |%WINDIR%\explorer "\\lonfile300\Proj$\M849_LYB_MoReTec\Engineering\Piping\16._Pipe_Supports\7. Springs\7.1 Checking\7.01 Checking"&|')
+!this.menu8.add('callback','Import Witch Hanger DATAL','!!whPlacement()')
+
+-----
+
+!this.bar.add('Query','menu9')
+menu.menu9
+
+!this.menu9.add('callback','History','!!KBRHISTORY()')
+!this.menu9.add('separator')
+!this.menu9.add('callback','Pipe Info','!!KBRQUERYPIPEDATA(PIPE)')
+!this.menu9.add('callback','Process Info','!!KBRQUERYPROCESSDATA(PIPE)')
+!this.menu9.add('callback','Stress Info','!!KBRQUERYSTRESSDATA(PIPE)')
+!this.menu9.add('separator')
+!this.menu9.add('callback',':CTL Attributes','Q :CTLADMINLOCK Q :CTLCOMPLETE Q :CTLFROZEN Q :CTLISSUED')
+!this.menu9.add('separator')
+!this.menu9.add('callback','Saved Loads','Q :UOPELOAD Q :UOCCLOAD Q :UHYDLOAD Q :UDISP Q :NSOPELOAD Q :NSOCCLOAD Q :NSHYDLOAD Q :NSDISP Q :DOPELOAD Q :DOCCLOAD Q :DHYDLOAD Q :DDISP Q :EWOPELOAD Q :EWOCCLOAD Q :EWHYDLOAD Q :EWDISP')
+!this.menu9.add('separator')
+!this.menu9.add('callback','Q Att','q att')
+!this.menu9.add('callback','Q CompRef','q compref')
+!this.menu9.add('callback','Q Description','q descri')
+!this.menu9.add('callback','Q Desp','q ddesp')
+!this.menu9.add('callback','Q Desp Description','!!DespTitle()')
+!this.menu9.add('callback','Q :KBRMCODE','q :KBRMCODE')
+!this.menu9.add('callback','Q :KBRNOTE','q :KBRNOTE')
+!this.menu9.add('callback','Q :KBRSUPPORTEDITEM','q :KBRSUPPORTEDITEM')
+--!this.menu9.add('callback','Q :MDSFRAMEDIR','q :MDSFRAMEDIR')
+--!this.menu9.add('callback','Q :MDSLINKREF','q :MDSLINKREF')
+--!this.menu9.add('callback','Q :MDSNOTE','q :MDSNOTE')
+!this.menu9.add('callback','Q MTORef','q mtor')
+!this.menu9.add('callback','Q Name','q name')
+!this.menu9.add('callback','Q Ori','q ori')
+!this.menu9.add('callback','Q Parameters','q para')
+!this.menu9.add('callback','Q Spref','q spref')
+!this.menu9.add('callback','Q Stex','q stex')
+--!this.menu9.add('callback','Q SupRfArray ','q suprfarray ')
+!this.menu9.add('separator')
+!this.menu9.add('callback','Q MATREF','q matref')
+!this.menu9.add('callback','Q :MDSMATREF','q :MDSMATREF')
+!this.menu9.add('separator')
+!this.menu9.add('menu','Position','menu91')
+!this.menu9.add('separator')
+!this.menu9.add('menu','Gensec','menu92')
+
+menu .menu91
+add |Q Position| |q pos|
+add |Q Position wrt world| |q pos wrt /*|
+add |Q Northing| |q n wrt /*|
+add |Q Easting| |q e wrt /*|
+add |Q Upping| |q u wrt /*|
+add separator
+add |Axes on| |axes at ce|
+add |Axes off| |axes off|
+add |Pos in same| |q pos in same|
+
+menu .menu92
+add |length| |q cutl|
+add |jusline| |q jusline|
+add |steel params| |q param of catref of spref|
+add |gtype| |q gtype|
+add separator
+add |poss pose wrt| |q poss wrt world q pose wrt world|
+add |poss pose| |q poss q pose|
+
+-----
+
+!this.bar.add('Query Pipe','menu10')
+menu.menu10
+
+!this.menu10.add('callback','Iso Progress','Q :Progress Q :MaxChkNo')
+!this.menu10.add('callback','Iso Issue Date/Rev','Q :IFCIsoDate Q : DrwRev')
+!this.menu10.add('callback','Holds','Q :HOLD1 Q :H1TYP Q :H1LOCK Q :HOLD2 Q :H2TYP Q :H2LOCK Q :HOLD3 Q :H3TYP Q :H3LOCK Q :HOLD4 Q :H4TYP Q :H4LOCK Q :HOLD5 Q :H5TYP Q :H5LOCK Q :HOLD6 Q :H6TYP Q :H6LOCK')
+!this.menu10.add('callback','Pipe Remarks','Q :LMDPipeRemarks')
+!this.menu10.add('callback','Support Remarks','Q :LMDSuppRemarks')
+!this.menu10.add('separator')
+!this.menu10.add('callback','Consup','Q Consup')
+!this.menu10.add('callback','PSpec','Q Pspec')
+
+!this.menu10.add('separator')
+!this.menu10.add('menu','Bran','menu101')
+
+menu .menu101
+add |HSTU| |q hstu|
+add |CLLENG| |q clleng|
+add |Hbore Tbore| |q hbore of bran q tbore of bran|
+add |Href Tref| |q href of bran q tref of bran|
+
+!this.menu10.add('separator')
+!this.menu10.add('menu','Component','menu102')
+
+menu .menu102
+add |HSTU| |q lstu|
+add |LTLENG| |q ltleng|
+add |Material and Type| |q rtext of detref of spref|
+
+
+-----
+
+!this.bar.add('Status','menu11')
+menu.menu11
+
+
+!this.menu11.add('menu','Query Status','menu111')
+!this.menu11.add('menu','Set Status','menu112')
+
+menu.menu111 
+
+!this.menu111.add('callback','Suppo','Q :MMSSTATUS OF SUPPO')
+!this.menu111.add('callback','Stru','Q :MMSSTATUS OF STRU')
+!this.menu111.add('callback','Pipe','Q :MMSSTATUS OF PIPE')
+!this.menu111.add('callback','Pipe: CTLSupportOE','Q :CTLSUPPORTOE OF PIPE')
+!this.menu111.add('callback','Pipe: All Suppo','!!KBRquerystatsupports()')
+
+menu.menu112 
+   
+!this.menu112.add('callback','Suppo OE2','$M/%pmllib%/KBRSUPPORTS/MACROS/SetSuppoStat.pmlmac 2')         
+!this.menu112.add('callback','Suppo OE3','$M/%pmllib%/KBRSUPPORTS/MACROS/SetSuppoStat.pmlmac 3')         
+!this.menu112.add('callback','Suppo OE4','$M/%pmllib%/KBRSUPPORTS/MACROS/SetSuppoStat.pmlmac 4')
+!this.menu112.add('callback','Pipe: All Suppo to OE2','!!setConsuppMmsStat(2)')
+!this.menu112.add('callback','Pipe: All Suppo to OE3','!!setConsuppMmsStat(3)')
+!this.menu112.add('callback','Pipe: All Suppo to OE4','!!setConsuppMmsStat(4)')
+
+-----
+
+--!this.bar.add('Notes','menu11')
+--menu.menu11
+--!this.menu11.add('menu',':KBRNote (Isometrics)','menu111')
+--!this.menu11.add('menu',':MDSNote (Support Details)','menu112')
+                                                                        
+--menu.menu111                                                                                                             
+--add |NON-STANDARD BRANCH BRACING| |:KBRNote 'NON-STANDARD BRANCH BRACING'|              
+--add |NON-STANDARD GUIDE| |:KBRNote 'NON-STANDARD GUIDE, REFER TO DETAIL'|
+--add |NON-STANDARD LINE STOP| |:KBRNote 'NON-STANDARD LINE STOP, REFER TO DETAIL'|  
+--add |GAP BETWEEN SHOE AND STEEL| |:KBRNote '##mm GAP BETWEEN SHOE AND SUPPORTING STEEL'|  
+--add |GUIDE GAP TO BE MAINTAINED| |:KBRNote '##mm GUIDE GAP TO BE MAINTAINED'|
+--add |GAP ON VERTICAL STOPS 1| |:KBRNote '0mm GAP ON UPPER MEMBER, ##mm GAP ON LOWER MEMBER'|
+--add |GAP ON VERTICAL STOPS 2| |:KBRNote '0mm GAP ON UPPER MEMBER, LOWER MEMBER NOT REQUIRED'|
+--add |SNIPE GUIDE MEMBER TO SUIT| |:KBRNote 'SNIPE GUIDE MEMBER TO SUIT'|
+--add |SNIPE STOP MEMBER TO SUIT| |:KBRNote 'SNIPE STOP MEMBER TO SUIT'|
+--add |NON-STANDARD CLAMP ORIENTATION| |:KBRNote 'NON-STANDARD CLAMP ORIENTATION AT ##DEG REQUIRED'|
+--add |ADJUST CABLE CLIP| |:KBRNote 'ADJUST CLIP LOCATION TO CABLE RACK SUPPORT STEEL'|
+
+--menu.menu112                                                                                                             
+--add |DECK PLATE CUT OUT| |:MDSNote 'STRUCTURAL DECK PLATE CUT OUT REQUIRED, +25mm'|
+--add |WING PLATE DETAIL| |:MDSNote 'WING PLATE DETAIL REQUIRED'|  
+--add |NON-STD GUIDE 1| |:MDSNote 'NON-STD GUIDE, WELD DETAILS AS PER STD XRG11'|  
+--add |NON-STD LINE STOP 1| |:MDSNote 'NON-STD LINE STOP, WELD DETAILS AS PER STD XRS10'|  
+--add |NON-STD GUIDE 2| |:MDSNote 'NON-STD GUIDE, DIMS AND WELD DETAILS AS PER XRG11 TYPE E'|  
+--add |NON-STD LINE STOP 2| |:MDSNote 'NON-STD LINE STOP, DIMS AND WELD DETAILS AS PER XRG11 TYPE E'|  
+--add |RADIUS PLATE TO SUIT TUBULAR| |:MDSNote 'ROLL PLATE TO SUIT TUBULAR RAD ###mm, SUPPLY LOOSE FOR SITE ERECTION, PROFILE MEMBER TO SUIT PLATE'|  
+--add |PROFILE MEMBER TO SUIT CLAMPS| |:MDSNote 'PROFILE MEMBER TO SUIT CLAMPS'|  
+--add |CHAMFER PLATE CORNERS| |:MDSNote '##DEG CHAMFER PLATE CORNERS AT ##mm'|  
+--add |SITE DRILL HOLE FOR BOLT| |:MDSNote 'SITE DRILL ##mm DIA HOLE FOR M## BOLT'|  
+
+-----
+
+!this.bar.add('Add All','menu13')
+menu.menu13
+!this.menu13.add('callback','Add all within','CALLG MADD VOL')
+!this.menu13.add('menu','All Within','menu131')
+!this.menu13.add('menu','Gensec within ','menu132')
+!this.menu13.add('menu','Panel Within','menu133')
+!this.menu13.add('menu','Pipe Within','menu134')
+
+menu .menu131
+add |0| |add all within vol ce 0|
+add |10| |add all within vol ce 10|
+add |100| |add all within vol ce 100|
+add |300| |add all within vol ce 300|
+add |1000| |add all within vol ce 1000|
+add |2000| |add all within vol ce 2000|
+
+menu .menu132
+add |0| |add all GENSEC within vol ce 0|
+add |10| |add all GENSEC within vol ce 10|
+add |100| |add all GENSEC within vol ce 100|
+add |300| |add all GENSEC within vol ce 300|
+add |1000| |add all GENSEC within vol ce 1000|
+add |2000| |add all GENSEC within vol ce 2000|
+
+menu .menu133
+add |0| |add all pane within vol ce 0|
+add |10| |add all pane within vol ce 10|
+add |100| |add all pane within vol ce 100|
+add |300| |add all pane within vol ce 300|
+add |1000| |add all pane within vol ce 1000|
+add |2000| |add all pane within vol ce 2000|
+
+menu .menu134
+add |0| |add all pipe within vol ce 0|
+add |10| |add all pipe within vol ce 10|
+add |100| |add all pipe within vol ce 100|
+add |300| |add all pipe within vol ce 300|
+add |1000| |add all pipe within vol ce 1000|
+add |2000| |add all pipe within vol ce 2000|
+
+-----
+
+show !!MRTsupportform
+REPRESENTATION LEVEL PIPE 10
+REPRESENTATION UPDATE       
+$.
+
+
+--  <-  EXIT [1] gphdrawlists.UPDATE
