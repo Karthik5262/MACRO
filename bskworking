@@ -1,0 +1,1858 @@
+Layout form !!bskworking dialog dock right
+
+!project  = current project
+!projdesc = !project.description()
+
+!projid   = !project.id()
+var !usr user
+
+-- title |BSK Design Menu:) $!projid - $!projdesc|
+title |BSK Working|
+!this.initcall = |!this.trackce()|
+  track |DBCHANGED| call |!this.trackce()|
+  track    |PADDCE| call |!this.trackce()|
+  track    |DESICE| call |!this.trackce()|
+  track    |CATACE| call |!this.trackce()|
+  track    |ISODCE| call |!this.trackce()|
+  track    |SCHECE| call |!this.trackce()|
+  track    |PROPCE| call |!this.trackce()|
+  track    |MANUCE| call |!this.trackce()|
+$p Form loaded...!
+$p Current user: $!usr
+
+
+bar
+add |FORM| .frm
+add |PIPE| .pip
+add |ABOUT| .abt
+add |UTILITY| .utility
+add |TOOLS| .tools
+
+menu.frm
+add |REOPEN| call |!this.reopen()|
+add |AIDCE| call |!this.aidce()|
+add |ShownF| call |q var !!fmsys.shownforms()|
+
+
+menu.abt
+add |???| call|!!alert.message('contact:  mailto:bsathishkumar@technip.com')|
+
+menu.pip
+add |ADD_ISOlist| call|!this.addlisttoform()|
+
+
+menu.utility
+add |ATTA-SUP| call|!this.asup()|
+add |ATTA-PEN| call|!this.apen()|
+add |SET GHOST MANUALY| call |!this.setghostman()|
+add |SB_MTOC| call |!this.sbmtoc()|
+add |:MDSCOMMENT| call |:mdscomment 'na'|
+add |:BRACOMMENT| call |:mdscomment 'na'|
+add |CASE-4| call |!this.case4mref()|
+add |RemCopyAll| call |!this.remcopyall()|
+add |Spring| call |!this.Spring()|
+add |get posori| call |!this.getPOSORI()|
+
+add |set posori| call |!this.setPOSORI()|
+add |get inclref| call |!this.getlistincl()|
+add |set inclref| call |!this.setlistincl()|
+
+
+menu.tools
+add |Reorder CE MEM| call|!this.reordercemem()|
+
+
+hdist 0.1
+vdist 0.2
+
+frame .comps |Components|
+!buttons = 8
+	!complist = split('ATTA ELBO VALV GASK LJSE FLAN FBLI TEE OLET REDU PCOM WELD CAP FTUB FILT INST')
+	Do !i indices !complist
+		if(int((!i - 1) / !buttons) eq (!i - 1) / !buttons) then
+			button .comp$!i |$!complist[$!i]| at x0  ymax  pixmap "AvevaSharedIcons>ID_$!complist[$!i]>32" Callback|!this.Createpipecomps('$!complist[$!i]')|
+		else
+			button .comp$!i |$!complist[$!i]| at xmax ymin pixmap "AvevaSharedIcons>ID_$!complist[$!i]>32" Callback|!this.Createpipecomps('$!complist[$!i]')|
+		endif
+		!this.comp$!i$n.setTooltip('$!complist[$!i]')
+	Enddo
+
+Exit
+
+		frame .frame1|Pipework| at xmin ymax
+		button.a1 |H_ID@|	    width 6 	call|!this.connbran('conn ph to id@')|
+path r
+		button.a11 |IDP@|	width 6 	call|!this.connbran('conn ph to idp@')|
+		button.a2 |H TO BT| width 6 	call|!this.connbran('conn ph to pt of id bra@')|
+		button.a3 |H TO BH| width 6 	call|!this.connbran('conn ph to ph of id bra@')|
+		button.a4 |F-MEM| width 6 	call|!this.connbran('conn ph to fir mem')|
+path d
+		button.b1 |T_ID@| 	width 6   call|!this.connbran('conn pt to id@')| at xmin.a1
+path r
+		button.b11 |IDP@| 	width 6   call|!this.connbran('conn pt to idp@')|
+		button.b2 |T TO BH| width 6 	call|!this.connbran('conn pt to ph of id bra@')|
+		button.b3 |T TO BT| width 6 	call|!this.connbran('conn pt to pt of id bra@')|
+		button.b4 |L-MEM| width 6 	call|!this.connbran('conn pt to las mem')|
+
+path d
+
+		rgroup .desmode |Mode|  call|!this.getmodeupdate()| frame Vertical at xmin.a1
+			add tag |For|
+			add tag |Bac|
+		--toggle.lock   'Track Mode' callback '!this.trackce()' at x23 y+0.5
+		
+path r
+		button.r1 |+5| width 3 hei 1.2 call |!this.rotatecebymode(5)| at x6.5 y2.6
+		button.r15 |+15| width 3 hei 1.2 call |!this.rotatecebymode(15)|
+		button.r2 |+30| width 3 hei 1.2 call |!this.rotatecebymode(30)|
+		button.r3 |+45| width 3 hei 1.2 call |!this.rotatecebymode(45)|
+		button.r4 |+60| width 3 hei 1.2 call |!this.rotatecebymode(60)|
+		button.r5 |+90| width 3 hei 1.2 call |!this.rotatecebymode(90)|
+		button.r11 |180| width 3 hei 2.6 call |!this.rotatecebymode(180)|
+path d
+		button.r6 |-5| width 3 hei 1.2 call |!this.rotatecebymode(-5)| at xmin.r1 y4
+path r
+		button.r75 |-15| width 3 hei 1.2 call |!this.rotatecebymode(-15)|
+		button.r7 |-30| width 3 hei 1.2 call |!this.rotatecebymode(-30)|
+		button.r8 |-45| width 3 hei 1.2 call |!this.rotatecebymode(-45)|
+		button.r9 |-60| width 3 hei 1.2 call |!this.rotatecebymode(-60)|
+		button.r10 |-90| width 3 hei 1.2 call |!this.rotatecebymode(-90)|
+		
+
+
+
+		--button.g1 |A-SUP| width 5 call |!this.asup()| at xmin.a1
+path r
+		--
+		--button.g3 |SBMTO| width 5 call |!this.sbmtoc()|
+		--button.g4 |BRjus| width 5 call |!this.setteenote()|
+path d
+
+		button.h1 |DTXR| width 6 call |q dtxr| at xmin.a1 background yellow
+path r
+		button.h2 |STEXT| width 6 call |q stext|
+		--button.h3 |ABOP| width 6 call |q abop wrt/*|
+		button.h3 |SPREF| width 6 call |q SPREF|
+		button.h4 |MTOREF| width 6 call |q MTOREF|
+		button.h45 |CE| width 6 call |q CE|
+path d
+		--button.h5 |Size:            Insu thk:           Rating:        | 	width 26 	call|!this.sizece()| at xmin.a1
+		button.h6 |CONN| width 6 	call|!this.connectElement('CONN')| at xmin.a1
+path r
+		button.h7 |NCONN| width 6 	call|!this.connectElement('NEX CONN')|
+		button.h8 |ORI| width 6 	call|ORI|
+		button.h5 |Size ,I-Thk ,Rating| width 13 call|!this.sizece()|
+
+path d
+		-- button.e1 |Thr_nex| width 6 	call|!this.thridplane('NEX')| at xmin.a1
+		button.thrce	|Thr CE| width	6	call |Thr CE| at xmin.a1
+path r
+		button.nexthrce	|NThr CE|	width	6	call |Nex Thr CE|
+		button.thrnex	|Thr Nex|	width	6	call |!this.movethrnex()| 
+		button.oritowid  |ORI_ID@|  width	6	call|!this.orice('ID@')|
+		button.oritownex |ORI_Nex|  width	6	call|!this.orice('NEX')|
+path d
+		button.d4 |Thr_ID| 	width 6 	call|THR ID@|  at xmin.a1
+path r
+		button.d5 |Thr_IDp| 	width 6 	call|THR IDp@|
+		-- button.d6 |M Plane| 	width 6 	call|!this.planemove()|
+		-- button.d7 |/B1| 	width 6 	call|!this.branchesnaming()|
+		-- button.d8 |N| 	width 6 	call|dir n|
+		button.s3 |CHOO| 	width 6 	call|Choo all|
+		button.s4 |Copy-S| 	width 6 	call|!this.copysame()|
+		button.s5 |Ren-B| 	width 6 	call|!this.renamebran()|
+
+		exit
+		
+		
+path d
+
+		frame .frame3|Structure| 
+path r
+		-- button.c1 |S IDPL@| 	width 6 	call|ext sta thr idpl@| 
+		-- button.c2 |E IDPL@| 	width 6 	call|ext end thr idpl@|
+		-- button.c3 |STA ID| 	width 6 	call|ext sta thr id@|
+		-- button.c4 |END ID| 	width 6 	call|ext end thr id@|
+		-- button.c5 |CutLen| 	width 6 	call|!This.cutlen()|
+path d		
+		-- button.c6 |Select| at xmin.a1	width 6 	call|!This.changesctnsize('')|
+path r		
+		button.c7 |Min-Size| at xmin.a1	width 6 	call|!This.changesctnsize('FIRST')|
+		button.c8 |Max-Size| 	width 6 	call|!This.changesctnsize('LAST')|
+		button.c9 |Pre-Size| 	width 6 	call|!This.changesctnsize('PREV')|
+		button.c10 |Nex-Size| 	width 6 	call|!This.changesctnsize('NEXT')|
+		
+		
+		--button.c3 |Q TOS| 		width 7.5 	call|q plen tos wrt/*|
+
+		exit
+path d
+
+		frame .eq|EQUI| 
+path r
+		button.eq1 |To IDP@ | 	width 6 	call|CALLAC ISTTPP| 
+		button.eq2 |IDPL@| 	width 6 	call|CALLAC ISTTPL|
+		button.eq3 |DIST| 	width 6 	call|CALLAC ISTIDP|
+		-- button.eq4 |EQUI-P| 	width 6 	call|!this.setprogress('EQUI')|
+		-- button.eq5 |PIPE-P| 	width 6 	call|!this.setprogress('PIPE')|
+		--button.c3 |Q TOS| 		width 7.5 	call|q plen tos wrt/*|
+
+		exit
+path d
+		frame.frame5 |Common Tool|
+		button.s1 |SEQ_DEL| 	width 7 	call|!this.seqdelete()| 	at xmin.a1 background orange 
+
+path r
+		-- button.s2 |SAVE_UNCL-ALL| 	width 12 	call|!this.saveanduncl()| background green 
+		-- button.s3 |CHOO| 	width 6 	call|Choo all|
+		path d
+		
+		-- option.wgsize  at xmin.s1 |WG-Mem| callback |!this.mdsaction('GUIDE-STOP')| tagwidth 5 width 3
+
+		-- button.s6 |C-LIKE| at xmin.s1	width 6 	call|CALLG MCOPYLIKE ID   CE|
+path r		
+		-- button.s7 |STOP| 	width 6 	call|!this.mdsaction('STOP')|
+		button.s8 |CLEAR| 	width 6 	call|unmark all aid clear all|
+		button.REosingle |Reo-CE| width 6 call|!this.reordercomp()|
+		-- button.reomulti |Reo-Ser| 	 width 6	call|!this.multireorder()|
+		button.gdfgdfg |INCL-To| 	 width 6	call|!this.cutincl()|
+    	--button.d2 |OPE_ER| 	width 7.5 	call|$m /c:\aveva\plant\pdms12.1.sp4\pmllib\design\workspace\errortxt.mac|
+		button.fdsf |Refr| 	 width 4	call|!this.reopen()|
+path d
+
+		-- option.valvatt  at xmin.s1 |V-Att| callback |!this.updatevalveatt()| tagwidth 5 width 5
+path r		
+		-- button.t1 |F-PEN| width 5 call |!this.apen()|
+		-- button.t2 |Choo-def| width 7 call |!this.defaultchoose()|
+
+-- $(
+		-- --button.d4 |3110| 	width 7.5 	call|/3110-PI| background white
+		-- --option.CAarea  at x12 || callback |!!ce = !this.CAarea.SELECTION('rtext').dbref()| tagwidth 4 width 7
+		
+-- path r
+		-- button.d5 |3120| 	width 7.5 	call|| at xmin.d1 background white 
+		-- button.d6 |3129| 	width 7.5 	call|| background white 
+		-- rgroup .togarea || at xmin.d1 call|!this.working()| frame horizontal
+			-- add tag |T1  |
+			-- add tag |T2|
+		
+			
+			-- path d
+-- $)
+		exit
+path d
+
+		frame .frame4|Move Component| width.frame3
+		--text.txt1 || call || tooltip |Enter value to move| width 5 is REAL format !!distanceFmt  
+		text.txt1 || call || tooltip |Enter value to move| width 5 is string 
+path r
+		rgroup .method ||  frame horizontal callback|!this.movecomp('DIR')| at ymin.txt1-0.1
+			add tag |MOVE |
+			add tag |DRAG |
+			add tag |DIR|
+			path d
+
+		button.f1 |CLEA| 	width 5  	call|!this.movecomp('clear')| 	background white at xmin.a1
+path r
+hdist 1
+		button.f2 |DIST| 	width 5  	call|!this.movecomp('dist')| 	background white
+		button.f3 |U| 	width 5  	call|!this.movecomp('U')| 	background 6
+		button.f4 |N| 	width 5  	call|!this.movecomp('N')|	background 5
+path d
+		button.f5 |W| 	width 5  	call|!this.movecomp('W')|	background ivory at xmin.f1
+path r
+		button.f6 |E| 	width 5  	call|!this.movecomp('E')| 	background ivory
+		button.f7 |D| 	width 5  	call|!this.movecomp('D')| 	background 6
+		button.f8 |S| 	width 5  	call|!this.movecomp('S')|	background 5
+		exit
+	
+path d
+vdist 0.2
+		-- path r
+		-- button.sortmem |Zone| 	 width 6	call|!this.sortcemem('ZONE')|
+		
+member .report is ARRAY
+member .report2 is ARRAY
+
+
+exit	
+
+
+-------------------------------------------------------------------------------------
+define method .branchesnaming()
+!pipe = PIPE
+Handle Any
+	return error1 'Select only PIPE...'
+Endhandle
+
+Claim CE Hier
+Handle Any
+	return error1 '$!!error.text'
+Endhandle
+
+Do !x from 1 to 2
+	Do !br values mem of $!pipe
+		$!br
+		if !x eq 1 then
+			unn
+		Else
+			Name $!pipe.name/B$!!CE.seq
+		Endif
+	Enddo
+Enddo
+
+endmethod
+
+-------------------------------------------------------------------------------------
+define method .getmodeupdate()
+-- q var !this.desmode.val
+if (!this.desmode.val eq 1) then
+	for
+else
+	bac
+endif
+endmethod
+
+-------------------------------------------------------------------------------------
+
+define method .connbran(!action is string)
+
+!lbore = LBORE
+Handle Any
+!lbore = HBORE
+	Handle Any
+		return
+	Endhandle
+!type = !!CE.type
+Elsehandle None
+!type = !!CE.own.type
+Endhandle 
+
+FOR $!type $!action
+Handle (61,528)
+Endhandle
+Endmethod
+
+
+-------------------------------------------------------------------------------------
+define method .connectElement(!action is string)
+var !mode Mode
+$!action
+Handle (7,3)
+q var !!error.text
+	!action1 = !action.replace('CONN','FCONN').split().last()
+	if !mode eq 'Forwards' then
+		!prevconn = Lconn of prev
+		Handle Any 
+			!prevconn = Hconn of BRan
+		Endhandle
+		!ceconn = Aconn of CE
+	Else
+		!prevconn = Aconn of prev
+		Handle Any 
+			!prevconn = Tconn of BRan
+		Endhandle
+		!ceconn = Lconn of CE
+	Endif
+	$!action1
+	if !prevconn ne 'SCM' and !ceconn ne 'SCM' then
+		-- CLEA 100
+		Dist 100 From CE
+	Endif
+ElseHandle Any
+	return error1 '$!!error.text'
+Endhandle
+Sel lstu
+Endmethod
+
+-------------------------------------------------------------------------------------
+define method .planemove()
+!dir = !!ce.ori.Ydir().string().split()[1]
+MOVE plan $!dir thr id@
+
+Endmethod
+
+-------------------------------------------------------------------------------------
+define method .trackce()
+
+!blank = array()
+
+var !mode mode
+if(!mode eq 'Forwards') then
+	!this.desmode.val = 1
+else
+	!this.desmode.val = 2
+endif
+
+-- if !!CE.type eq 'ATTA' then
+
+-- !wgsize = ARRAY()
+-- !wgsize[1] = '1'
+-- !wgsize[2] = '2'
+-- !wgsize[3] = '3'
+-- !wgsize[4] = '4'
+-- !wgsize[5] = '5'
+-- !wgsize[6] = '6'
+-- !wgsize[7] = '7'
+-- !wgsize[8] = '8'
+
+-- !this.wgsize.dtext = !wgsize
+
+-- ELSE
+
+-- !this.wgsize.dtext = !blank
+
+-- Endif
+
+-- if !!CE.type eq 'VALV' then
+
+-- !valvatt = ARRAY()
+-- !valvatt[1] = 'LO'
+-- !valvatt[2] = 'LC'
+-- !valvatt[3] = 'NO'
+-- !valvatt[4] = 'NC'
+-- !valvatt[5] = 'CSC'
+-- !valvatt[6] = 'CSO'
+-- !valvatt[7] = 'VENT-A'
+-- !valvatt[8] = 'VENT-L'
+
+-- !this.valvatt.dtext = !valvatt
+-- ELSEif !!CE.type eq 'PCOM' then
+-- !valvatt[1] = 'OPEN'
+-- !valvatt[2] = 'CLOSE'
+
+-- !this.valvatt.dtext = !valvatt
+
+-- ELSE
+
+-- !this.valvatt.dtext = !blank
+
+-- Endif
+
+
+
+
+
+
+
+
+
+endmethod
+-------------------------------------------------------------------------------------
+
+define method .reopen()
+kill !!bskworking 
+pml reload form !!bskworking 
+show !!bskworking
+endmethod
+-------------------------------------------------------------------------------------
+define method .bskworking()
+
+!wgsize = ARRAY()
+!wgsize[1] = '1'
+!wgsize[2] = '2'
+!wgsize[3] = '3'
+!wgsize[4] = '4'
+!wgsize[5] = '5'
+!wgsize[6] = '6'
+!wgsize[7] = '7'
+!wgsize[8] = '8'
+
+-- !this.wgsize.dtext = !wgsize
+
+!valvatt = ARRAY()
+!valvatt[1] = 'LO'
+!valvatt[2] = 'LC'
+!valvatt[3] = 'NO'
+!valvatt[4] = 'NC'
+!valvatt[5] = 'CSC'
+!valvatt[6] = 'CSO'
+
+
+!valvatt[7] = 'OPEN'
+!valvatt[8] = 'CLOSE'
+
+!valvatt[9] = 'VENT-A'
+!valvatt[10] = 'VENT-L'
+
+
+
+-- !this.valvatt.dtext = !valvatt
+
+
+
+$(
+!dtext = array()
+!rtext = array()
+if !this.togarea.val eq 1 then
+!dtext[1] = '3110'
+!dtext[2] = '3119'
+!dtext[3] = '3120'
+!dtext[4] = '3129'
+!dtext[5] = '3191'
+
+!rtext[1] = '/3110-PI'
+!rtext[2] = '/3119-PI'
+!rtext[3] = '/3120-PI'
+!rtext[4] = '/3129-PI'
+!rtext[5] = '/3191-PI'
+
+elseif !this.togarea.val eq 2 then
+
+!dtext[1] = '3210'
+!dtext[2] = '3219'
+!dtext[3] = '3220'
+!dtext[4] = '3229'
+!dtext[5] = '3291'
+
+!rtext[1] = '/3210-PI'
+!rtext[2] = '/3219-PI'
+!rtext[3] = '/3220-PI'
+!rtext[4] = '/3229-PI'
+!rtext[5] = '/3291-PI'
+endif
+
+!this.CAarea.dtext = !dtext 
+!this.CAarea.rtext = !rtext
+ $)
+endmethod
+
+-------------------------------------------------------------------------------------
+define method .callarea()
+
+!!ce = !this.CAarea.SELECTION('rtext').dbref()
+
+endmethod
+-------------------------------------------------------------------------------------
+
+define method .movecomp(!posn is string)
+if !this.method.val eq 3 and !posn.length() ne 1 then
+	!this.f1.active = FALSE
+	!this.f2.active = FALSE
+	return
+elseif !posn eq 'DIR' then
+	!this.f1.active = true
+	!this.f2.active = true
+	return
+endif
+
+var !mod mode
+
+!inpt = !this.txt1.val
+if !inpt eq '' and !this.method.val ne 3 and !posn ne 'DIR' then
+	!inpt = !!alert.input(|Enter value to continue...|,||)
+
+	if !inpt eq '' then
+	$p please enter value...
+	return 
+	endif
+endif
+
+-----move command------
+if !this.method.val eq 1 and !posn.length() eq 1 then
+	by $!posn $!inpt wrt/*
+	$p by $!posn $!inpt wrt/*
+-----drag command------
+elseif !this.method.val eq 2 and !posn.length() eq 1 then
+	drag by $!posn $!inpt wrt/*
+	HANdle (61,150)
+	by $!posn $!inpt wrt/*
+	$p by $!posn $!inpt wrt/*
+	return
+	Endhandle
+	$p drag by $!posn $!inpt wrt/*
+-----dir command------
+elseif !this.method.val eq 3 and !posn.length() eq 1 then
+	DIR $!posn
+	$P DIR $!posn
+Endif
+
+if !posn eq 'dist' then
+	dist $!inpt from ce
+	$p dist $!inpt from ce
+
+elseif !posn eq 'clear' then
+	clear $!inpt
+	$p $!mod clear $!inpt
+endif
+
+if type eq 'ANCI' then
+	!dist = :MDSNudgeDist
+	!dist = !dist + !inpt.real()
+	:MDSNudgeDist $!dist
+	q :MDSNudgeDist
+	SUPC
+	CONN PH TO FIR MEM
+	CONN PT TO LAS MEM
+Endif
+
+endmethod
+
+
+-------------------------------------------------------------------------------------
+
+define method .seqdelete()
+!cetype = type
+!sec = seq
+var !cemod mode
+if (!cemod eq 'Forwards') then
+	delete $!cetype $!sec
+	handle any
+	$p End... moved to owner...!
+	endhandle
+elseif (!!ce.seq eq 1)then
+	delete $!cetype
+	$p End... moved to owner...!
+else
+	!nxt = next
+	
+	delete $!cetype $!nxt
+endif
+endmethod
+
+-------------------------------------------------------------------------------------
+
+define method .tpen()
+pml rehash all
+kill !!test
+show !!test
+endmethod
+-------------------------------------------------------------------------------------
+
+define method .unnammem()
+!cuel = !!ce
+!cetype = type
+	var !getalll coll all $!cetype mem for ce
+	do !aa from 1 to !getalll.size()
+	$!getalll[$!aa]
+	unnam
+	enddo
+$!cuel
+endmethod
+-------------------------------------------------------------------------------------
+define method .pipinfo()
+!cecur = !!ce
+!cetype = type
+
+var !borr q pa pl
+!borr = []
+
+endmethod
+
+-------------------------------------------------------------------------------------
+
+define method .check()
+handle any
+endhandle
+
+!cetype = !!ce.type 
+!cenam = !!ce.name
+
+$(
+if !cetype.eq( 'elbo' ) or !cetype.eq( 'flan' )or !cetype.eq( 'tee' ) or !cetype.eq( 'valv' )$
+or !cetype.eq( 'gask' ) or !cetype.eq( 'fbli' )or !cetype.eq( 'redu' )or !cetype.eq( 'clos' )$
+or !cetype.eq( 'pcom' )or !cetype.eq( 'inst' )or !cetype.eq( 'olet' )or !cetype.eq( 'cap' )$
+or !cetype.eq( 'coup' )or !cetype.eq( 'ftub' )or !cetype.eq( 'atta' )or !cetype.eq( 'unio' )then
+$)
+if (!!ce.owner.type eq 'PIPE') or (!!ce.owner.type eq 'BRAN') then
+!dia = trim(distance( nombore( false , attrib cpar[1 ] ) , false , false , true , 4 , false ) ) 
+!des = !!ce.dtxr
+var !spref spref of ce
+var !lstube lstube of ce
+!mat = !!ce.mtxx
+!wei = !!ce.spr.cmpref.cwei
+
+!s[1] = |name 	: $!cenam|
+!s[2] = |type 	: $!cetype|
+!s[3] = |size 	: $!dia|
+!s[4] = |descr	: $!des|
+
+!this.tp1.val = !s
+endif
+
+endmethod
+-------------------------------------------------------------------------------------
+
+define method .sizece()
+if (!!ce.owner.type eq 'PIPE') or (!!ce.owner.type eq 'BRAN') then
+!cetype = !!ce.type 
+!cenam = !!ce.name
+!sizc = cpar[1]
+!cat = !!ce.catref.name 
+!dia = trim(distance( nombore( false , attrib cpar[1 ] ) , false , false , true , 4 , false ) ) 
+q var !dia
+var !ithk insu
+$p size: $!dia ,insu thk: $!ithk ,rating:$!cat
+endif
+endmethod
+----------------------------------------------------------------------------------------
+define method .setghostman()
+pip
+!ghostno = :zap-ownerdocnumber
+if !ghostno.string() eq 'NA' then
+	!ghostinp = !!alert.input(|Enter ghost no|,||)
+	:zap-ownerdocnumber '$!ghostinp'
+	handle any
+	endhandle
+else
+	q :zap-ownerdocnumber
+endif
+
+endmethod
+
+----------------------------------------------------------------------------------------
+define method .sbmtoc()
+pip
+var !collatt coll all atta with matchw(stype,'ATTA-*') eq t for ce
+do !kk from 1 to !collatt.size()
+$!collatt[$!kk]
+
+mtoc off
+pip
+enddo
+
+endmethod
+
+----------------------------------------------------------------------------------------
+define method .Apen()
+
+
+if !!ce.type eq 'ATTA' then
+	if !!CE.Stype eq 'PENETRATION-ATTA' then
+	var !pos u wrt/*
+	!posu = !!alert.input(|Input elevation|,|$!pos|)
+	move plan u thr u $!posu wrt/*
+	var !posu U wrt/*
+	!note =  'FLOOR PENETRATION EL : +' + !posu
+	stext '$!note'
+	mtoc off
+	Endif
+Endif
+
+-- new atta choo all with stype 'ATTA-PEN'
+-- mtoc off
+-- golabel/goopen
+-- endif
+
+-- label/goopen
+
+-- var !pdir pl dir wrt/*
+-- !len = length(!pdir)
+
+-- !pldir = !pdir.substring(-1,1)
+
+-- if !len gt 1 or (!pldir eq 'U' or !pldir eq 'D') eq f then
+
+-- thr idp@
+-- stext 'WALL PENETRATION'
+
+-- elseif !pldir eq 'U' or !pldir eq 'D' then
+-- var !pos u wrt/*
+
+-- !posu = !!alert.input(|Input elevation|,|$!pos|)
+-- move plan u thr u $!posu wrt/*
+-- !spen =  'FLOOR PENETRATION EL+'&!posu
+-- !nenam = !spen.replace('mm',' ')
+-- stext '$!nenam'
+
+-- endif
+q stext	
+endmethod 
+----------------------------------------------------------------------------------------
+
+define method .asup()
+var !plv ldir
+!pos = !plv.substring(1,1)
+new atta choo all with stype 'ATTA-SUP'
+mtoc off
+move plan $!pos thr id@
+handle (61,528)
+dist 100 from prev
+$p dist 100 from ce
+endhandle
+
+endmethod 
+----------------------------------------------------------------------------------------
+define method .force()
+var !suna namn
+var !ddir p3dir
+!setstxt =  !suna & ' $'  & 'ori = '&!ddir
+stext '$!setstxt' 
+
+endmethod
+----------------------------------------------------------------------------------------
+
+define method .setteenote()
+var !sty STYPE
+
+if !sty.matchwild('*FLW*') then
+
+:tp-brjust 'TT CONNECTION'
+elseif !sty.matchwild('*SP*') then
+:tp-brjust 'SP BRANCH $!sty'
+else
+:tp-brjust 'AVAILABLE IN PIPING CLASS BUT NOT INCLUDED IN BRANCH TABLE'
+
+endif
+var !qbrju :TP-Brjust
+$p :TP-Brjust '$!qbrju'
+endmethod 
+----------------------------------------------------------------------------------------
+
+define method .rpadchk()
+-----------rpad branch check ---------------------
+$p >>> rpad branch check>>>>
+pip
+var !pnam namn of pip
+var !count coll all tee with (matchwild(stype,'*PA*') or matchwild(stype,'*BR*') or matchwild(stype,'*SP*') eq t) for pip
+do !colltee from 1 to !count.size()
+                 $!count[$!colltee]
+				 var !cr cref
+				 var !ref ce
+				 if (!cr.matchwild('*$!pnam*'))ne t then
+$p check branch $!ref	
+endif		 
+enddo
+pip
+endmethod 
+----------------------------------------------------------------------------------------
+
+define method .case4mref()
+var !spr spref
+!lthk = !spr.replace('_1','_lthk')
+!ptp = !spr.replace('_1','_ptp')
+!mref = '$!lthk  $!ptp'
+$p $!mref
+mtoref $!mref 
+handle (2,109)
+$p problem...check manually
+endhandle
+q mtoref
+endmethod 
+----------------------------------------------------------------------------------------
+define method .aidce()
+
+aid cearrow on
+!inp = !!alert.input('Set height','')
+aid cearrow hei $!inp
+
+endmethod 
+----------------------------------------------------------------------------------------
+define method .finduslines()
+!data = array()
+!input = !!alert.input('Enter design area and us number              "ex: 3120/4-002"','3120/4-002')
+!split = !input.split('/')
+if (!input eq '') then
+SKIP
+else
+!area = !split[1]
+!usno = !split[2]
+var !coll coll all atta with matchwild(stext,'*$!usno*') for /$!<area>-pi
+handle any
+!!alert.message('Check ca and us no')
+SKIP
+endhandle
+var !stx stext of $!coll[1]
+do !add values !coll 
+!!ce = !add.dbref()
+var !pnam name of ce
+!data.append(!pnam)
+add pip
+enddo
+/$!<stx> add ce auto ce
+endif
+do !count values !data 
+!!ce = !count.dbref()
+$p $!count
+enddo
+
+endmethod 
+----------------------------------------------------------------------------------------
+define method .unsetmdscom()
+var !coll coll all atta for pip
+do !get from 1 to !coll.size()
+$!coll[$!get]
+:mdscomment unset
+enddo
+
+endmethod 
+----------------------------------------------------------------------------------------
+
+
+define method .thridplane(!by is string)
+
+var !pl pa dir
+!thr = !pl.substring(1,1)
+
+if !by eq 'NEX' then
+	move plan $!thr thr nex
+	$p move plan $!thr thr nex
+elseif !by eq 'ID' then
+	move plan $!thr thr id@
+	$p move plan $!thr thr id@
+endif
+
+endmethod 
+----------------------------------------------------------------------------------------
+define method .stxmanentry()
+
+if type ne 'atta' then
+
+SKIP error1 'stand in atta'
+endif
+
+!val = !this.tp1.val
+q var !val
+
+if !this.tp1.count eq 1 then
+stext '$!val[1]'
+
+elseif !this.tp1.count eq 2 then
+stext '$!val[1]
+$!val[2]'
+
+elseif !this.tp1.count eq 3 then
+stext '$!val[1]
+$!val[2]
+$!val[3]'
+
+elseif !this.tp1.count gt 3 then
+SKIP error1 'count exceeds max of 3'
+
+endif
+q stext
+endmethod 
+----------------------------------------------------------------------------------------
+define method .reordercomp()
+
+var !mod mode
+var !ref ce
+var !typ type
+prompt off
+    Prompt load escape '$!mod REORDER $!ref AFTER ........'
+var !id name of id@
+
+IF !ref.dbref().own ne !id.dbref().own then
+
+var !idownlst ownlst of $!id
+!idownarr = !idownlst.split()
+var !Ceownlst ownlst of $!ref
+!ceownarr = !Ceownlst.split()
+!afterce = !idownarr[!ceownarr.size() + 1]
+else
+!afterce = !id
+endif
+
+$!ref
+own reorder $!ref after $!afterce
+$!ref
+
+endmethod 
+----------------------------------------------------------------------------------------
+define method .orice(!oriby is STRING)
+!pa = 'PA'
+!pl = 'Pl'
+var !mod mode
+if type of own eq 'BRAN'then
+	IF !!CE.TYPE NE 'TEE' then
+		if !mod eq 'Forwards' then
+			ori and pl is tow $!oriby
+		else
+			ori and pa is tow $!oriby
+		endif
+	else
+		ori and p3 is tow $!oriby
+	endif
+Else
+	return error1 'Select only pipe components...'
+endif
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .remcopyall()
+
+var !typ type
+var !copyof Eval name for all WITH matchwild(name,'*Copy-*') and ISNAMED for ce
+q var !copyof
+do !count values !copyof
+--!!ce = !count.dbref()                 
+!change = !count.replace('of-',' ')
+!set = !change.split(' ').last()
+$!count
+Name /$!set
+handle any
+$P /$!set Name already available
+-- var !own flnn of own
+-- !set = !own + '/' + !set
+-- Name /$!set
+endhandle
+ENDDO 
+$!typ
+
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .Spring()
+
+VAR !CENAM CE
+IF !!CE.TYPE NE 'HANG' THEN
+$p GOTO >>>>>>HANG
+HANG
+HANDLE ANY
+ENDHANDLE
+RETURN
+ELSE
+VAR !CENAM CE
+!GO = !CENAM.BEFORE('/H1')
+FOR
+HANG CONN PH TO FIR MEM
+HANG CONN PT TO LAS MEM
+var !hp HPOS wrt/*
+var !tp TPOS wrt/*
+hpos $!tp wrt/*
+2 
+var !pap pa dir
+var !plp pl dir
+OWN
+Tdirection $!plp
+Hdirection $!plp
+$!GO
+
+CREF $!CENAM
+q dtxr
+endif
+$!CENAM 
+
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .addlisttoform()
+
+--if !!isobatch.detailList.size() gt 0 then
+
+
+--!!isobatch.detailList.clear()
+!list = !!csupfind.lst.dtext
+!listisobatch = array()
+
+do !x indices !list
+!nam = trim(!list[$!x],'LRM')
+!listisobatch.append(!nam)
+enddo
+
+!!isobatch.detailList.appendarray(!listisobatch)
+!!isobatch.detailList.sortunique()
+!!isobatch.displayList()
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .multireorder()
+
+var !curce ce
+var !ref ce
+ prompt off
+    prompt load escape 'Pick First Element'
+var !start name of id@
+handle (61,528)
+return
+Endhandle
+var !own own of $!start
+ prompt off
+    prompt load escape 'Pick Second Element'
+var !end name of id@
+
+if !start.dbref().own ne !end.dbref().own then
+!!alert.error('Start and End pick should be in same Owner')
+$p Start and End pick should be in same Owner
+return 
+elseif !curce eq !start then
+!!alert.error('Don`t pick CE')
+$p Don`t pick CE
+return
+else
+golabel /start
+
+endif
+--------------------------getting array commponents-----------------
+label /start
+!mem = !start.dbref().own.members
+!starseq = !start.dbref().seq
+!endseq = !end.dbref().seq
+!count = 1
+if !starseq lt !endseq then
+	!count = !endseq - !starseq + !count
+elseif !endseq lt !starseq then
+	!count = !starseq - !endseq + !count 
+	!starseq = !endseq
+	!invert = 'YES'
+Endif
+
+!movearr = !mem.from(!starseq,!count)
+if not(undefined(!invert)) then
+	!movearr.invert()
+Endif
+
+q var !starseq
+q var !count
+q var !movearr
+
+-- !!ADDTOLIST(!movearr,'MyTest')
+--------------------------arranging collection after selected CE-----------------
+do !i values !movearr
+$!own
+!prevName = !ref
+REORDER $!i.name after $!prevName
+!ref = !i.name
+Enddo
+
+$!curce
+
+endmethod
+
+----------------------------------------------------------------------------------------
+define method .getPOSORI()
+var !ref ce
+!cemem = !!ce.members
+!report = array()
+
+!report.append('1')
+
+do !cedbref values !cemem
+$!cedbref
+var !pos pos wrt/*
+var !dir pos wrt/*
+
+!report.append('Position $!pos wrt/*')
+!report.append('Position $!dir wrt/*')
+
+!report.append('next')
+
+enddo
+!report.RemoveLast()
+!this.report.clear()
+!this.report.appendarray(!report)
+q var !this.report
+
+$!ref
+endmethod 
+
+
+
+----------------------------------------------------------------------------------------
+define method .setPOSORI()
+
+do !ce values !this.report
+$!ce
+
+ENDDo
+!this.report.clear()
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .getlistincl()
+!this.getPOSORI()
+var !ref ce
+!cemem = !!ce.members
+!report = array()
+
+
+do !cedbref values !cemem
+$!cedbref
+var !ref ref
+!report.append('INCL $!ref')
+
+enddo
+
+
+!this.report2.clear()
+!this.report2.appendarray(!report)
+q var !this.report2
+
+$!ref
+endmethod 
+
+
+
+----------------------------------------------------------------------------------------
+define method .setlistincl()
+var !ref ce
+
+do !inclref values !this.report2
+
+$!inclref
+
+ENDDo
+
+!this.report2.clear()
+$!ref
+
+--!this.setPOSORI()
+
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .rotatecebymode(!value is real)
+AID clear ALL
+var !mode Mode
+var !ref ref
+-- claim ce hier
+!adir = adir
+Handle NONE
+$!ref
+	if !mode.upcase() eq 'FORWARDS' then
+		rota abou pa by $!value
+		if !!ce.type eq 'FLAN' then
+			Do !pp from 1 to 10
+			var !pos P$!pp pos wrt/*
+			Handle None
+			AID TEXT NUM 111 |P$!pp| AT $!pos
+			Elsehandle any
+			q var !!error.text
+			break
+			Endhandle
+			Enddo
+		Endif
+	else
+		rota abou pl by $!value
+		if !!ce.type eq 'FLAN' then
+			Do !pp from 1 to 10
+			var !pos P$!pp pos wrt/*
+			Handle None
+			AID TEXT NUM 111 |P$!pp| AT $!pos
+			Elsehandle any
+			q var !!error.text
+			break
+			Endhandle
+			Enddo
+		Endif
+	Endif
+elsehandle any
+	-- ROTATE through $!!CE.pos about Z by $!value
+	ROTATE through $!!CE.pos about Z by $!value
+	Handle Any
+		id @
+		Handle Any
+			return
+		Endhandle
+		!pos = Pos
+		$!ref
+		ROTATE through $!pos about Z by $!value
+	Endhandle
+endhandle
+
+endmethod 
+----------------------------------------------------------------------------------------
+define method .saveanduncl()
+!save = !!alert.confirm('Yes to savework and Unclaim all..!')
+if !save eq 'YES' then
+savework
+uncl all
+$P Save and Unclaim Completed
+else 
+return
+endif
+endmethod 
+----------------------------------------------------------------------------------------
+define method .copysame()
+var !type type 
+new $!type copy same
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .cutincl()
+
+var !ref ref
+var !type type
+var !owntype Type of OWN
+
+prompt off
+    prompt load escape 'Pick To Referance'
+var !to name of $!owntype of id@
+$!to
+INCL $!ref
+Handle (2,852)
+q var !!error.text
+Endhandle
+endmethod 
+
+----------------------------------------------------------------------------------------
+define method .cutlen()
+if !!ce.TYPE ne 'SCTN' then
+$p 'CE is not SCTN'
+return
+endif
+var !orilen cutlen
+!len = !!alert.input('Enter SCTN Length','$!orilen')
+skip if !len eq ''
+!len.real()
+
+!orilen.real()
+q var !orilen
+q var !len
+
+!finlen = !len.real() - !orilen.real()
+q var !finlen
+
+ext end $!finlen
+
+endmethod
+----------------------------------------------------------------------------------------
+define method .supportatta()
+
+var !suppatta coll all atta with matchw(stype,'*SUPPORT*') or  matchw(stype,'*PENETRATION*') or  matchw(stype,'*APPS*') for PIP
+DO !atta values !suppatta
+$!atta
+mtoc off
+Enddo
+
+endmethod
+
+----------------------------------------------------------------------------------------
+define method .chooalloldstype()
+
+var !list eval name for all with (type ne 'TUBI') and (type ne 'INST') for ce
+DO !ce values !list
+$!ce
+var !stype stype
+handle any 
+skip
+endhandle
+choo all with stype '$!stype'
+Enddo
+
+endmethod
+
+----------------------------------------------------------------------------------------
+define method .Deletepuppieceatta()
+var !ref ce
+var !list coll all (atta Pcom) for ce
+
+DO !ce values !list
+$!ce
+if !ce.dbref().stype eq 'APPS' or !ce.dbref().stype eq 'PUPP' then
+Delete Atta
+handle any
+delete pcom
+Endhandle
+
+else
+$p skip
+endif
+Enddo
+$!ref
+endmethod
+
+
+----------------------------------------------------------------------------------------
+define method .batchsetpuppiece()
+var !ref ce
+var !list coll all (valv) for ce
+
+if !!alert.confirm('Batch set pup-piece').eq('YES') then
+DO !ce values !list
+$!ce
+$m/%PMLLIB%\Mac\MP-Create-PUP-Attas.mac
+Enddo
+else
+return
+endif
+$!ref
+
+endmethod
+
+---------------------------------------------------------------------------------------- 
+define method .enisetpipename()
+$P setting :TP-LINE-NUM
+PIP
+var !ref ce
+var !namn namn
+!name = !namn.after('-').substring(1,11)
+q var !name
+:TP-LINE-NUM '$!name'
+$p clearing ptspec
+var !pipbran coll all (pipe bran) for pip
+DO !x values !pipbran
+$!x
+ptspec unset
+Enddo
+$p changing F8 dir u for 56* spec
+!this.supportatta()
+var !coll coll all pcom with (stype ne 'PUPP') for PIP
+Do !x values !coll
+$!X 
+var !spr spref
+if !spr.matchwild('*56*') then
+ORI and p3 is u
+HAndle (61,7)
+Q var !!error.text
+Endhandle 
+else
+skip
+endif
+Enddo
+
+$!ref
+
+endmethod
+
+
+---------------------------------------------------------------------------------------- 
+define method .dbbsbb()
+
+NEW BRANCH 
+BUIL false
+SHOP false
+Bran conn ph to id@
+
+LHEA true
+LTAI true
+LNTP unset
+HSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+CCEN 0
+CCLA 0
+PSPE SPECIFICATION /56A
+ISPE SPECIFICATION /J
+DUTY unset
+DSCO unset
+PTSP unset
+INSC unset
+PLANU unset
+DELDSG FALSE
+
+NEW ELBOW
+POS E 198582.737mm S 24790.3mm U 39326.135mm
+ORI Y is S and Z is E 45 D
+BUIL false
+SHOP true
+SPRE SPCOMPONENT /56A/90ELR_5000.0_0.0_1_%_%_%
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+DELDSG FALSE
+
+END
+NEW VALVE
+POS E 198582.737mm S 25160.9mm U 39326.135mm
+ORI Y is E and Z is U
+BUIL false
+SHOP true
+SPRE SPCOMPONENT /56A/XVBCB_5000.0_0.0_1_%_%_%
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ARRI 2
+LEAV 1
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+MTOT OFF
+DELDSG FALSE
+
+END
+NEW TEE
+POS E 198582.737mm S 25518.5mm U 39326.135mm
+ORI Y is D and Z is E
+BUIL false
+SHOP true
+SPRE SPCOMPONENT /56A/TEE_5000.0_0.0_1_%_%_%
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+DELDSG FALSE
+
+END
+NEW VALVE
+POS E 198582.737mm S 25876.1mm U 39326.135mm
+ORI Y is E and Z is U
+BUIL false
+SHOP true
+SPRE SPCOMPONENT /56A/XVBCB_5000.0_0.0_1_%_%_%
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ARRI 2
+LEAV 1
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+MTOT OFF
+DELDSG FALSE
+
+END
+NEW FLANGE
+POS E 198582.737mm S 26017.7mm U 39326.135mm
+ORI Y is W and Z is U
+BUIL false
+SHOP true
+SPRE SPCOMPONENT /56A/FLW_5000.0_0.0_1_%_%_%
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ARRI 2
+LEAV 1
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+DELDSG FALSE
+
+END
+NEW GASKET
+POS E 198582.737mm S 26017.7mm U 39326.135mm
+ORI Y is E and Z is U
+BUIL false
+SHOP false
+SPRE SPCOMPONENT /56A/GSW_5000.0_0.0_1_%_%_%
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+DELDSG FALSE
+
+END
+NEW INSTRUMENT /TT373FT0006-2
+POS E 198582.737mm S 26020.5mm U 39326.135mm
+ORI Y is W and Z is U
+BUIL false
+SHOP false
+SPRE SPCOMPONENT /ENI-INST-600-SS/00FIFBF00ADAD_150
+LSTU SPCOMPONENT /56A/PIPE_5000.0_0.0_1_%_%_%
+ORIF true
+POSF true
+ISPE SPECIFICATION /J
+MTOC OFF
+DELDSG FALSE
+
+END
+
+
+
+endmethod
+
+----------------------------------------------------------------------------------------------------
+Define Method .mdsaction(!meth is STRING)
+
+if !meth eq 'GUIDE-STOP' then
+
+if !!ce.type eq 'ATTA' and (!!ce.spr.name.matchwild('*WG*') or !!ce.spr.name.matchwild('*WS*')) then
+
+!tosize = !!bskworking.wgsize.pickedfield
+
+if !!ce.spr.name.matchwild('*WG*') then
+!size = !tosize + 8
+ELSE
+!size = !tosize + 9
+Endif
+
+
+DEsp n$!size 1
+
+Do !x from 10 to 19
+
+!n = !x + !tosize
+
+skip if (!x eq 16 or !x eq 17) and !!ce.spr.name.matchwild('*WG*')
+skip if !x geq 17 and !!ce.spr.name.matchwild('*WS*')
+skip if !x eq !size
+
+DEsp n$!x 0
+
+Enddo
+
+
+
+Endif
+q ce
+q dtxr
+
+Elseif (!meth eq 'STOP') or !!ce.spr.name.matchwild('*WS*') then
+
+var !atta ce
+var !dtxr dtxr
+prompt off
+Prompt Load Escape 'Select SCTN...'
+ID SCTN @
+        Handle any
+             Prompt On
+             Return
+		Endhandle
+!wid = para[2]
+$!atta
+	if !dtxr.matchwild('*WS01*') then
+		DESP n2 $!wid
+	Else
+		DESP n7 $!wid
+	Endif
+
+
+Endif
+
+Endmethod
+
+
+
+----------------------------------------------------------------------------------------------------
+Define Method .updatevalveatt()
+
+!selected = !!bskworking.valvatt.PICKEDFIELD
+!att = !!bskworking.valvatt.selection('dtext')
+
+IF !selected LEQ 6 and !!CE.type eq 'VALV' then
+	:TP-LOCK '$!att'
+	$p :TP-LOCK '$!att'
+Elseif !!CE.type eq 'PCOM' and !selected GEQ 7 then
+	:TP-SB '$!att'
+	$P :TP-SB '$!att'
+Elseif !!CE.type eq 'VALV' and !selected GEQ 7 then
+
+	:TP-VENT '$!att'
+	$P :TP-VENT '$!att'
+$m /\\in001vm0026\pdms_master\PROJECT-TPFMC\068748T001\pmllib\TPIL\Design\prepareiso\Coral-Create-HP-VENT-Attas.mac
+Endif
+
+
+Endmethod
+
+----------------------------------------------------------------------------------------------------
+Define Method .changesctnsize(!mode is STRING)
+
+
+
+if not(!!ce.type inset ('SCTN','GENSEC')) then
+	return error1 'Select SCTN/GENSEC...'
+Endif
+
+var !curspr spref
+var !sprlist split(mem of own of spref)
+
+!curindex = !sprlist.findfirst(!curspr)
+
+-- q var !sprlist.size()
+-- q var !curindex
+!minsize = !sprlist.first()
+!maxsize = !sprlist.last()
+
+if !mode eq 'FIRST' then
+	SPREF $!minsize
+Elseif !mode eq 'LAST' then
+	SPREF $!maxsize
+Elseif !mode eq 'PREV' then
+	!prev = !curindex - 1
+	SPREF $!sprlist[$!prev]
+	handle ANY
+		return error1 'This is the First Size'
+	Endhandle
+Elseif !mode eq 'NEXT' then
+	!nex = !curindex + 1
+	SPREF $!sprlist[$!nex]
+	handle ANY
+		return error1 'This is the Last Size'
+	Endhandle
+Endif
+
+
+
+Endmethod
+
+
+
+----------------------------------------------------------------------------------------------------
+Define Method .defaultchoose()
+
+
+!plbore = pl bore
+
+!spec = Ownlst[2] of spref
+-- !spec = Ownlst[2] of spref
+-- choose spec $!spec with Stype '$!!CE.stype'
+
+if !!ce.type inset('OLET','TEE') then
+q p3bore
+Endif
+
+if !!ce.type eq 'REDU' then
+q plbore
+	choose spec $!spec
+Else
+	choose spec $!spec with Stype '$!!CE.stype'
+	Handle Any
+	$p ****Choose manually $!!ce.namesq ***
+	CHOO ALL
+	Endhandle
+Endif
+
+Endmethod
+
+----------------------------------------------------------------------------------------------------
+Define Method .setprogress(!type is string)
+var !ref ce
+if !type eq 'PIPE' then
+	$!type
+	handle any
+		return error1 'Select Pipe...'
+	endhandle
+	!prog = real(:mmsstatus)
+	q var !prog
+	!inp = Real(!!alert.input('Enter the new OE code','$!prog'))
+		if !inp eq !prog then
+			return
+		Elseif !inp.real() LT !prog.real() then
+			return error1 'Cant reduce the OE code'
+		Endif
+	:mmsstatus '$!inp'
+	handle any
+		q var !!error.text
+		return
+	Elsehandle none
+		savework
+		uncl all
+	Endhandle
+	$P $!!ce.name OE status changed from $!prog to $!inp
+	-- q :mmsstatus
+	$!ref
+Endif
+
+Endmethod
+
+----------------------------------------------------------------------------------------------------
+Define Method .sortcemem(!type is string)
+
+var !ref ce
+$!type
+Handle Any
+	return error1 '$!!error.text'
+Endhandle
+!mem = !!ce.members
+!nos = !mem.evaluate(object BLOCK(|!mem[!evalIndex].name|))
+-- !nos = !mem.evaluate(object BLOCK(|!mem[!evalIndex].name.split('-').last().real()|))
+-- q var !nos
+!indices = !nos.sortedindices()
+
+-- q var !indices
+!sortednos = !nos.reindex(!indices)
+!sorted = !mem.reindex(!indices)
+-- q var !sortednos
+-- !mem.invert()
+!prev = !sorted[1]
+
+Do !ind from 2 to !sorted.size()
+$!type
+REORDER $!sorted[$!ind] AFTER $!prev
+!prev = $!sorted[$!ind]
+Enddo
+
+Endmethod
+
+
+----------------------------------------------------------------------------------------------------
+Define Method .Createpipecomps(!type is string)
+
+if not(!!CE.type eq 'BRAN' or !!CE.own.type eq 'BRAN') then
+	return error1 'Cannot create a $!type at this level'
+Endif
+var !validcomps Eval Tanswer for all SELE for Pspec of PIPE 
+!validcomps.sortunique()
+!exist = !validcomps.find(!type)
+
+if !exist.size() eq 0 then
+	return error1 'SPEC does not contain $!type elements'
+Endif
+	New $!type Choo All
+	!this.connectElement('CONN')
+	if badref(spr) then
+		Delete $!type
+	Endif
+
+Endmethod
+
+----------------------------------------------------------------------------------------------------
+Define Method .movethrnex()
+----------------------------------------------------------------------------------------------------
+
+!ref = ce
+if !ref.own.type ne 'BRAN' then
+	return error1 'Select only pipe components...'
+Endif
+
+var !mode Mode
+!dir = 'Adir'
+!iltu = 'IL TUBE of $!ref'
+!br = 'H'
+if !mode.upcase().match('BAC') gt 0 then
+	!br = 'T'
+	!dir = 'Ldir'
+	!prev = NEX
+	Handle Any
+		!prev = BRAN
+	Endhandle
+	!iltu = 'IL TUBE of $!prev'
+Endif
+
+$!iltu
+Handle None
+	$P Component is Inline...
+	$!ref
+	return
+Elsehandle (2,121)
+Endhandle
+
+!apos = !ref.pos.wrt(world)
+!adir = !ref.$!dir$n.wrt(world)
+!pos2 = !apos.offset(!adir,500)
+!line = object Line(!apos,!pos2)
+
+!nex = NEX
+Handle None
+	!apos = !nex.pos.wrt(world)
+	!adir1 = !nex.$!dir$n.wrt(world)
+ElseHandle Any
+!nex = !nex.Own
+	!apos = !nex.$!<br>pos$n.wrt(world)
+	!adir1 = !nex.$!<br>dir$n.wrt(world)
+Endhandle
+!pos2 = !apos.offset(!adir1,500)
+!line1 = object Line(!apos,!pos2)
+!intpos = !line.intersection(!line1)
+!angle = !adir.angle(!adir1)
+$!ref 
+
+---Simple mode---
+Thr Nex
+if type eq 'ELBO' and !angle LEQ 90 then
+	DIR TOW $!apos
+	Handle Any
+	Endhandle
+Endif
+
+$!iltu
+Handle None
+	$P THR Nex
+	$!ref
+	return
+Elsehandle (2,121)
+Endhandle
+
+$P THR Nex $$* Advanced....
+--Advance Mode---
+
+POS $!intpos
+
+Endmethod
+
+Define method .renamebran()
+
+!pip = name of PIPE
+Handle Any
+	return error1 'Select Only Pipe...'
+Endhandle
+var !brans Coll all BRAN FOR $!pip
+Do !x values !brans
+	$!x
+	Unn
+Enddo
+
+Do !n indices !brans
+	$!brans[$!n]
+	NAME $!<pip>/B$!n
+	Handle Any
+		q var !!error.text
+	Endhandle
+Enddo
+$!pip
+Endmethod
+
