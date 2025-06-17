@@ -1,0 +1,372 @@
+--- This Form is used to Rotate and Move the ZONE members
+layout form !!GCSMoveRotate
+	var !projdesc Proj DESC
+	Title 'Move or Rotate Elements | $!projdesc'
+	frame .frame0 'Load elements from' at x0
+		button .add1 'SITE' callback |!this.AddElements('SITE')|
+		button .reset 'Reset' at x33 callback |!this.Reset()|
+		button .refr 'Refresh' at x40 callback |!this.Refresh()|
+	exit
+	frame .frame1 'List is Empty'  anchor right + left + top at x0 ymax
+		list .items callback '!this.GotoCE()'  at xmin ymin  anchor all width 45 height 25
+	exit
+	frame .frame2 'Select Action' at x0 ymax
+		rToggle .movesel |Move| call |!this.Toggle()| tagwidth 5
+		rToggle .rotasel |Rotate| call |!this.Toggle()| tagwidth 5
+		text .zdir  |Axis| tagwidth 4 call |!this.ParseDir()| width 6 is string 
+		text .roteval  |Deg| tagwidth 4 width 6 is Real format !!angleFmt
+		button .pick 'Pick Pos' at x40 callback |!this.PickPOS()|
+		text .eastdist  |E| tagwidth 2 at x0 ymax + 0.3 call || width 10 is REAL format !!distanceFmt
+		text .northdist  |N| tagwidth 2 at xmax ymin.eastdist call || width 10 is REAL format !!distanceFmt
+		text .updist  |U| tagwidth 2 at xmax ymin.eastdist call || width 10 is REAL format !!distanceFmt
+		button .action 'Move All' at x40 callback |!this.RunAction()| Background YELLOW
+	exit
+	$P Starting KBR IM Tools... [Move or Rotate Elements]
+	$P Project : $!projdesc
+
+Exit
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .GCSMoveRotate()
+-------------------------------------------------------------------------------------------------------------------
+
+!headings = split('Name,Owner',',')
+!this.items.setheadings(!headings)
+!this.Reset()
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .Reset()
+-------------------------------------------------------------------------------------------------------------------
+!this.ResetGadget()
+!this.frame1.tag =  'List is Empty'
+!this.items.clear()
+!this.ProjSetting()
+
+Endmethod
+-------------------------------------------------------------------------------------------------------------------
+Define Method .ResetGadget()
+-------------------------------------------------------------------------------------------------------------------
+
+!this.eastdist.val = 0
+!this.northdist.val = 0
+!this.updist.val = 0
+!this.roteval.val = 180
+!this.movesel.val = true
+!this.zdir.visible = false
+!this.pick.visible = false
+!this.roteval.visible = false
+!this.zdir.val = 'U WRT/*'
+!this.action.tag = 'Move All'
+
+Endmethod
+
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .Refresh()
+-------------------------------------------------------------------------------------------------------------------
+
+kill !!GCSMoveRotate
+SHOW !!GCSMoveRotate
+
+Endmethod
+-------------------------------------------------------------------------------------------------------------------
+Define Method .ParseDir()
+-------------------------------------------------------------------------------------------------------------------
+!dir = object Direction(!this.zdir.val)
+Handle (2,813)
+	!this.zdir.val = 'U WRT/*'
+	return error1 'Invalid Direction...'
+Endhandle
+!this.zdir.val = !dir.string()
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .PickPOS()
+-------------------------------------------------------------------------------------------------------------------
+
+var !ref REF OF ID@
+Handle Any
+	return
+Endhandle
+!pos = !ref.dbref().POS.wrt(world)
+!this.eastdist.val = !pos.east
+!this.northdist.val = !pos.north
+!this.updist.val = !pos.up
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .Toggle()
+-------------------------------------------------------------------------------------------------------------------
+!this.ResetGadget()
+!this.zdir.visible = !this.rotasel.val
+!this.pick.visible = !this.rotasel.val
+!this.roteval.visible = !this.rotasel.val
+if !this.movesel.val then
+	!this.action.tag = 'Move All'
+Else
+	!this.action.tag = 'Rotate All'
+Endif
+--- GCS project setting
+!this.ProjSetting()
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .ProjSetting()
+-------------------------------------------------------------------------------------------------------------------
+!this.pick.active = false
+!this.roteval.active = false
+!this.zdir.active = false
+-- !this.eastdist.active = !this.movesel.val
+-- !this.northdist.active = !this.movesel.val
+-- !this.updist.active = !this.movesel.val
+!this.eastdist.active = false
+!this.northdist.active = false
+!this.updist.active = false
+!this.eastdist.val = 1455805
+!this.northdist.val = 26260
+!this.updist.val = 118000
+!this.rotasel.visible = false
+!!alert.message('Application usage restricted, Contact CAD Admin')
+KILL !!GCSMoveRotate
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .RunAction()
+-------------------------------------------------------------------------------------------------------------------
+!this.ParseDir()
+!this.InitCheck()
+
+if !this.movesel.val then
+	!this.MoveItems()
+Else
+	!this.RotateItems()
+Endif
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .GotoCE()
+-------------------------------------------------------------------------------------------------------------------
+
+!ce = !this.items.selection('rtext')
+$!ce
+Handle Any
+	!this.Reset()
+	return error1 'Invalid Item selected, List cleared'
+Endhandle
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .InitCheck()
+-------------------------------------------------------------------------------------------------------------------
+!elems = !this.items.rtext
+if !elems.size() eq 0 then
+	return error1 'No Elements in the list'
+Endif
+
+if !this.eastdist.val.unset() or !this.northdist.val.unset() or !this.updist.val.unset() then
+	return error1 'Input values missing...'
+Endif
+if !this.movesel.val and !this.eastdist.val eq 0 and !this.northdist.val eq 0 and !this.updist.val eq 0 then
+	return error1 'Input values are Zero...'
+Endif
+
+!this.CheckActionDone()
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .RotateItems()
+-------------------------------------------------------------------------------------------------------------------
+
+!dt = object datetime()
+!date = !dt.string().replace(':','-').replace(' ','_') + '.log'
+!log = Object File('%pdmsuser%\Rotate_$!date')
+!logdata = Array()
+!logdata.append('Report generated at ' + !dt.string())
+!logdata.append(!this.frame1.tag)
+!elems = !this.items.rtext
+!logdata.append('###############################################################################################')
+!logdata.appendarray(!elems)
+!logdata.append('###############################################################################################')
+!logdata.append('ROTATED THROUGH POSITION E $!this.eastdist.val N $!this.northdist.val U $!this.updist.val WRT/* ABOUT $!this.zdir.val BY $!this.roteval.val')
+!tot = !elems.size()
+if !!alert.confirm('Press Yes to confirm rotation of $!tot Elements?') eq 'NO' then
+	return
+Endif
+Do !x values !elems
+	$!x
+	!pos = !!CE.pos.wrt(WORLD)
+	handle None
+	!ori = !!CE.ori.wrt(WORLD)
+		!logdata.append('$!!CE.namtyp $!pos $!ori')
+	ElseHandle Any
+	Endhandle
+	ROTA THR E $!this.eastdist.val N $!this.northdist.val U $!this.updist.val WRT/* ABOU $!this.zdir.val by $!this.roteval.val
+	!logdata.append('Rotated $!!CE.namtyp')
+Enddo
+!this.Reset()
+!logdata.append('Completed...')
+!log.writefile('OVERWRITE',!logdata)
+-- q var !logdata
+-- $P Log File Generated at $!log
+-- syscom 'START $!log'
+
+!this.UpdateAppWorld('ROTATE')
+SESSION COMMENT 'Batch Task $!tot elements rotated'
+if !!alert.confirm('Action completed, Click Yes to SAVEWORK') eq 'YES' then
+	SAVEWORK
+	UNCLAIM ALL
+Endif
+
+Endmethod
+
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .MoveItems()
+-------------------------------------------------------------------------------------------------------------------
+
+!dt = object datetime()
+!date = !dt.string().replace(':','-').replace(' ','_') + '.log'
+!log = Object File('%pdmsuser%\Move_$!date')
+!logdata = Array()
+!logdata.append('Report generated at ' + !dt.string())
+!logdata.append(!this.frame1.tag)
+!elems = !this.items.rtext
+!logdata.append('###############################################################################################')
+!logdata.appendarray(!elems)
+!logdata.append('###############################################################################################')
+!logdata.append('ELEMENTS MOVED BY E $!this.eastdist.val N $!this.northdist.val U $!this.updist.val WRT/*')
+!tot = !elems.size()
+if !!alert.confirm('Press Yes to confirm moving the $!tot Elements?') eq 'NO' then
+	return
+Endif
+Do !x values !elems
+	$!x
+	!pos = !!CE.pos.wrt(WORLD)
+	handle None
+	!ori = !!CE.ori.wrt(WORLD)
+		!logdata.append('$!!CE.namtyp $!pos $!ori')
+	ElseHandle Any
+	Endhandle
+	BY E $!this.eastdist.val WRT/*
+	BY N $!this.northdist.val WRT/*
+	BY U $!this.updist.val WRT/*
+	!logdata.append('Moved $!!CE.namtyp')
+Enddo
+!this.Reset()
+!logdata.append('Completed...')
+!log.writefile('OVERWRITE',!logdata)
+-- q var !logdata
+-- $P Log File Generated at $!log
+-- syscom 'START $!log'
+!this.UpdateAppWorld('MOVE')
+SESSION COMMENT 'Batch Task $!tot elements moved'
+if !!alert.confirm('Action completed, Click Yes to SAVEWORK') eq 'YES' then
+	SAVEWORK
+	UNCLAIM ALL
+Endif
+
+
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .UpdateAppWorld(!mode is string)
+-------------------------------------------------------------------------------------------------------------------
+!site = NAME OF SITE
+/GCSMOVEROTATE
+NEW APPDAR $!<site>-DATA
+DESC '$!mode'
+$!site
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .CheckActionDone()
+-------------------------------------------------------------------------------------------------------------------
+!site = Name of SITE
+var !exists EXISTS $!<site>-DATA APPDAR
+if !exists.match('TRUE') gt 0 then
+	return error1 'SITE <$!site> already rotated or moved, Contact CAD Admin'
+Endif
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .AddElements(!mode is string)
+-------------------------------------------------------------------------------------------------------------------
+-- q var !mode
+!this.Reset()
+if !mode eq 'SITE' then
+	!site = Name of SITE
+	Handle Any
+		return error1 'CE is not a SITE Element...'
+	Endhandle
+	-- !mod = Module of SITE
+	-- if !mod ne 'UREA' then
+		-- return error1 'Add only Urea SIte..'
+	-- Endif
+	-- !this.eastdist.val = 271151
+	-- !this.northdist.val = 386221
+	-- !this.updist.val = 0
+	!this.CheckActionDone()
+	var !elements Eval name for all ZONE MEM for SITE
+	!tag = 'SITE : $!site : Total Elements = '
+Elseif !mode eq 'Search' then
+	!input = !!alert.input('Enter the Site name','/KBR-1100-0001/*')
+	if !input eq '' then
+		return error1 'Input is blank'
+	Endif
+	var !elements Eval name for all ZONE MEM with matchwild(name of site,!input) and dbwrite
+	Handle Any
+		return error1 'Invalid expression entered...'
+	Endhandle
+	!tag = 'WBS Search Site : <$!input> : Total Elements = '
+Endif
+q var !elements.size()
+if !elements.size() eq 0 then
+	return error1 'Selected SITE has 0 3D elements...'
+Endif
+
+!this.frame1.Tag = !tag + !elements.size().string()
+
+!this.AddElementstoList(!elements)
+
+Endmethod
+
+-------------------------------------------------------------------------------------------------------------------
+Define Method .AddElementstoList(!elements is Array)
+-------------------------------------------------------------------------------------------------------------------
+!ref = ce
+
+!headings = split('NAMTYP,NAMTYP of Owner',',')
+!data = Array()
+!rtext = Array()
+Do !ce values !elements
+	CLAIM $!ce HIER
+	Handle Any
+		return error1 '$!!error.text'
+	Endhandle
+	!col = Array()
+	Do !h values !headings
+		var !res $!h of $!ce
+		!col.append(!res)
+	Enddo
+	!data.append(!col)
+	!rtext.append('$!ce')
+Enddo
+!this.items.setRows(!data)
+!this.items.rtext = !rtext
+$!ref
+
+Endmethod
+
+
