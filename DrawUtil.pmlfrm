@@ -1,0 +1,876 @@
+------------------------------------------------------------------------
+--
+-- Copyright (c) KBR
+--
+-- File:            DrawUtil.pmlfrm
+--   Type:          Function Definition
+--   Group:
+--     Keyword:
+--   Module:        Draw
+--   Replaces:
+--
+-- Author:          Steve Riner
+-- Created:         10 April 2020
+--
+-- Last modified by $Author:  11/3/2020
+--                  $Revision: 1.1 $
+--
+-- Description:     Draw Utilities
+--
+--
+------------------------------------------------------------------------
+--
+-- Methods defined:
+--   [Name]           [Description]
+--
+------------------------------------------------------------------------
+setup form !!DrawUtil resizable at xr 0.25 yr 0.5
+
+   title |Draw Utilities|
+   --init |!this.init()|
+   cancelcall |!this.cancel()|
+   bar
+     add |File|        .FILE
+     add |Query|       .QUERY
+     add |Create|      .CREATE
+     add |Modify|      .MODIFY
+     add |Utilities|   .UTIL
+     add |Reports|     .REPORTS
+   exit
+
+   menu .CREATE
+     add |ViewSymbology|      call |!this.ViewSymbology()|
+     add |RevCloud|           menu .BulgeFactor
+     add |RevTriangle|        menu .RevNumber
+     add |Note|               menu .NoteNumber
+     add |Circle|             call |!this.revCircle()|
+   exit
+   
+   menu .BulgeFactor
+     add |BulgeFactor 2mm|    call |!this.revCloud(2mm)|
+     add |BulgeFactor 3mm|    call |!this.revCloud(3mm)|
+     add |BulgeFactor 4mm|    call |!this.revCloud(4mm)|
+     add |BulgeFactor 8mm|    call |!this.revCloud(8mm)|
+     add |BulgeFactor 12mm|   call |!this.revCloud(12mm)|
+   exit
+   
+   menu .NoteNumber
+     add |1|                  call |!this.Note(1)|
+     add |2|                  call |!this.Note(2)|   
+   exit
+   
+   menu .RevNumber
+     add |1|                  call |!this.revTriangle(1)|
+     add |2|                  call |!this.revTriangle(2)|
+     add |3|                  call |!this.revTriangle(3)|
+     add |4|                  call |!this.revTriangle(4)|
+     add |5|                  call |!this.revTriangle(5)|
+   exit
+
+   menu .FILE
+     add |Close|           call |!this.cancel()|
+     add |Delete|          menu .DELETE
+   exit
+   
+   menu .DELETE
+     add |Thumbnail Files|        call |!this.DelThumbFiles()|
+     add |STRA in NOTE|           call |!this.DelStraNote()|
+   exit
+   
+   menu .MODIFY
+     add |Title Block|            call |show !!TitleBlock|
+     add |Rev Triangle|           menu .TRIREV
+   exit
+   
+   menu .TRIREV
+     add |REV 1|                  call |!this.TriangleSel(1)|
+     add |REV 2|                  call |!this.TriangleSel(2)| 
+     add |REV 3|                  call |!this.TriangleSel(3)| 
+     add |REV 4|                  call |!this.TriangleSel(4)| 
+   exit
+   
+   menu .QUERY
+     add |DM Drwg|                call |!this.qDrwg()|
+     add |REVI|                   call |!this.qRevi()|
+     add |UserMod|                call |!this.QUserMod()|
+   exit
+      
+   menu .UTIL
+     add |Lists/Collections|      call |show !!cdclist|
+     add |Reorder CE|             call |!this.reorder()|
+     add |Reposition Autotag|     call |!this.repositionAutoTag()|
+     
+   exit   
+   menu .REPORTS
+     add |Create Report|          call |CALLIBR XREPDEF|
+     add |Modify Report|          call |CALLIBR XREPSEL MODIFY|
+     add separator
+     add |StaVal|                 call |!this.qStaval()|
+     add |REVI|                   call |!this.qrevi()|
+     add |UDAs|                   call |!this.qUDA()|
+   exit
+  
+   frame .whole 'Find the PIPEs whose matc did not load into EMM'
+    button .findNoLoad |Find No Loads| call |!this.FindNoGoEMM()|  at xmin + .45 ymin
+    --text .jogval    'Jog'      at x 1 y 1 width 3 is STRING
+    --toggle .div10 '/10' at xmax.jogval ymin.jogval - .4 call |!this.settoggle('div')|
+    --toggle .mul10 '*10' at xmax.jogval ymin.jogval + .4 call |!this.settoggle('mul')|
+    --button .jogxp   'X+' at xmax.div10 + .25 ymin.jogval call |!this.jog('X+',!this.jogval.val)|
+    --button .jogxm   'X-' at xmax.jogxp ymin.jogval  call |!this.jog('X-',!this.jogval.val)|
+    --button .jogyp   'Y+' at xmax.jogxm ymin.jogval  call |!this.jog('Y+',!this.jogval.val)|
+    --button .jogym   'Y-' at xmax.jogyp ymin.jogval  call |!this.jog('Y-',!this.jogval.val)|
+    exit
+Path Down 
+  BUTTON _X1 |XYPOS-+| CALL |xypos -0.3/32in 0.3/32in refr| TOOLTIP|Moves Glab X-Y+|AT X0 Y2.25
+  _X1.Background  = 'yellow'
+   BUTTON _X2 |XYPOS++| CALL |xypos +0.3/32in +0.3/32in refr| TOOLTIP|Moves Glab X+Y+|AT X9.25 Y2.25
+  _X2.Background  = 'yellow'
+   BUTTON _X3 |XYPOS--| CALL |xypos -0.3/32in -0.3/32in refr| TOOLTIP|Moves Glab X-Y-|AT X0 Y3.25
+  _X3.Background  = 'yellow'
+  BUTTON _X4 |XYPOS+-| CALL |xypos +0.3/32in -0.3/32in refr| TOOLTIP|Moves Glab X+Y-|AT X9.25 Y3.25
+  _X4.Background  = 'yellow'
+   BUTTON _X5 |XYPOS+| CALL |xypos +0in +0.3/32in refr| TOOLTIP|Moves Glab X+|AT X0 Y4.25
+  _X5.Background  = 'yellow'
+   BUTTON _X6 |XYPOS-| CALL |xypos +0in -0.7/32in refr| TOOLTIP|Moves Glab Y-|AT X8.25 Y4.25
+  _X6.Background  = 'yellow'
+   BUTTON _X7|X+.125| CALL|BY X+.125|TOOLTIP |MOVE BY X+.125|AT X19 Y2.25
+  _X7.Background  = 'green'
+  BUTTON _X8|X+.25| CALL|BY X+.25|TOOLTIP |MOVE BY X+.25|AT X27 Y2.25
+  _X8.Background  = 'green'
+   BUTTON _X9|X+.5| CALL|BY X+.5|TOOLTIP |MOVE BY X+.5|AT X34 Y2.25
+  _X9.Background  = 'green'
+  BUTTON _X10|X+1| CALL|BY X+1|TOOLTIP |MOVE BY X+1|AT X40 Y2.25
+  _X10.Background  = 'green'
+  BUTTON _X11|X+5| CALL|BY X+5|TOOLTIP |MOVE BY X+5|AT X45 Y2.25
+  _X11.Background  = 'green'
+  BUTTON _X12|X-.125| CALL|BY X-.125|TOOLTIP |MOVE BY X-.125|AT X19 Y3.25
+  _X12.Background  = 'orange'
+  BUTTON _X13|X-.25| CALL|BY X-.25|TOOLTIP |MOVE BY X-.25|AT X27 Y3.25
+  _X13.Background  = 'orange'
+  BUTTON _X14|X-.5| CALL|BY X-.5|TOOLTIP |MOVE BY X-.5|AT X34 Y3.25
+  _X14.Background  = 'orange'
+  BUTTON _X15|X-1| CALL|BY X-1|TOOLTIP |MOVE BY X-1|AT X40 Y3.25
+  _X15.Background  = 'orange'
+  BUTTON _X16|X-5| CALL|BY X-5|TOOLTIP |MOVE BY X-5|AT X45 Y3.25
+  _X16.Background  = 'orange'
+  
+  BUTTON _X17|Y+.125| CALL|BY Y+.125|TOOLTIP |MOVE BY Y+.125|AT X19 Y4.25
+  _X17.Background  = 'green'
+  BUTTON _X18|Y+.25| CALL|BY Y+.25|TOOLTIP |MOVE BY Y+.25|AT X27 Y4.25
+  _X18.Background  = 'green'
+  BUTTON _X19|Y+.5| CALL|BY Y+.5|TOOLTIP |MOVE BY Y+.5|AT X34 Y4.25
+  _X19.Background  = 'green'
+  BUTTON _X20|Y+1| CALL|BY Y+1|TOOLTIP |MOVE BY Y+1|AT X40 Y4.25
+  _X20.Background  = 'green'
+  BUTTON _X21|Y+5| CALL|BY Y+5|TOOLTIP |MOVE BY Y+5|AT X45 Y4.25
+  _X21.Background  = 'green'
+  BUTTON _X22|Y-.125| CALL|BY Y-.125|TOOLTIP |MOVE BY Y-.125|AT X19 Y5.25
+  _X22.Background  = 'orange'
+  BUTTON _X23|Y-.25| CALL|BY Y-.25|TOOLTIP |MOVE BY Y-.25|AT X27 Y5.25
+  _X23.Background  = 'orange'
+  BUTTON _X24|Y-.5| CALL|BY Y-.5|TOOLTIP |MOVE BY Y-.5|AT X34 Y5.25
+  _X24.Background  = 'orange'
+  BUTTON _X25|Y-1| CALL|BY Y-1|TOOLTIP |MOVE BY Y-1|AT X40 Y5.25
+  _X25.Background  = 'orange'
+  BUTTON _X26|Y-5| CALL|BY Y-5|TOOLTIP |MOVE BY Y-5|AT X45 Y5.25
+  _X26.Background  = 'orange'
+  
+  BUTTON _X27|ON ID | CALL|On ID $@|TOOLTIP |ON ID AT|AT X0 Y5.25
+  _X27.Background  = 'WHITE'
+ BUTTON _X28|ON IDP| CALL|On IDP $@|TOOLTIP |ON IDP AT|AT X8.25 Y5.25
+ _X28.Background  = 'WHITE'
+ BUTTON _X29|GLAB| CALL|NEW GLAB COPY PREV|TOOLTIP |NEW GLAB COPY PREV| AT X0 Y6.25
+ _X29.Background  = 'WHITE'
+ BUTTON _X30|SLAB| CALL|NEW SLAB COPY PREV|TOOLTIP |NEW SLAB COPY PREV| AT X6 Y6.25
+ _X30.Background  = 'WHITE'
+ BUTTON _X31|OVRSHT AT| CALL|OVERSHOOT $@|TOOLTIP |OVERSHOOT AT| AT X12 Y6.25
+ _X31.Background  = 'WHITE'
+ BUTTON _X32|OVRSHT| CALL|Q OVERSHOOT|TOOLTIP |Q THE OVERSHOOT| AT X23 Y6.25
+ _X32.Background  = 'WHITE'
+ BUTTON _X33|PLCL| CALL|Q PLCL|TOOLTIP |Q THE PLCLEARANCE|AT X31 Y6.25
+ _X33.Background  = 'WHITE'
+ BUTTON _X34|PLCL AT| CALL|PLCL $@|TOOLTIP |PLCLEARANCE ID AT| AT X37 Y6.25
+ _X34.Background  = 'WHITE'
+  BUTTON _X35|ATT| CALL|Q ATT|TOOLTIP |QUERY ATTRIBUTES|AT X0 Y7.25
+ _X35.Background  = 'cyan'
+ BUTTON _X36|DDNAME| CALL|Q DDNAME|TOOLTIP |Q THE DDNAME|AT X5 Y7.25
+ _X36.Background  = 'cyan'
+ BUTTON _X37|NAME| CALL|Q NAME|TOOLTIP |Q THE NAME|AT X13 Y7.25
+ _X37.Background  = 'cyan'
+ BUTTON _X38|FUNC| CALL|Q FUNC|TOOLTIP |Q THE FUNC|AT X19 Y7.25
+ _X38.Background  = 'cyan'
+ BUTTON _X39|POS| CALL|Q POS|TOOLTIP |Q THE POS|AT X25 Y7.25
+ _X39.Background  = 'cyan'
+ BUTTON _X40|XYPOS| CALL|Q XYPOS|TOOLTIP |Q THE XYPOS|AT X30 Y7.25
+ _X40.Background  = 'cyan'
+ --BUTTON _X41|XYPOS| CALL|VAR1NAME|TOOLTIP |VAR1 NAME|AT X36 Y7.25
+ --_X41.Background  = 'cyan'
+ --BUTTON _X42|XYPOS| CALL|INCLUD$V1|TOOLTIP |INCLUDES VAR1|AT X44 Y7.25
+ --_X42.Background  = 'cyan'
+  exit
+
+------------------------------------------------------------------------
+define method .FindNoGoEMM()
+------------------------------------------------------------------------
+-- KBRDrawManager
+-- Method to find any loading errors from matc to EMM operation
+$p Starting to find files...
+!FilesWithErrors = array()
+!csvLines = array()
+
+!deliverableType = !!bdcui.deliverableType.DTEXT[!!bdcui.deliverableType.selection().real()]
+handle any
+  $p You must be in Draw with the Draw Manager form open and Piping discipline selected.
+  return
+endhandle
+
+if !deliverableType.eq('PROJECT AUTO SPOOL ISO') then
+  !deliverableFolder = 'PROJECT_AUTOSPOOL_ISOMETRICS'
+elseif !deliverableType.eq('PROJECT ISO') then
+  !deliverableFolder = 'PROJECT_ISOMETRICS'
+else
+  $p There is no directory listed for this deliverable type
+  return
+endif  
+
+-- Create a FILE object of the MATERIALS directory
+!matDir = object file('%projdir%\piping\drawings\$!deliverableFolder\material')
+-- Create an ARRAY of files
+!filesFullPath = !matDir.files()
+!csvLines.append('$!deliverableFolder')
+!csvLines.append('Filename,Modified,String,Link')
+!numberOfFiles = !filesFullPath.size()
+$p Processing $!numberOfFiles files from $!matDir
+!count = 0
+do !x indices !filesFullPath
+  !count = !count + 1
+  if !count.gt(!numberOfFiles) then
+    $p Count $!count is greater than Number of Files $!numberOfFiles
+    skip
+  endif
+  !fileNameDotExtension = !filesFullPath[$!x].entry()
+  !dtm = !filesFullPath[$!x].dtm()
+  
+  -- Check if the file has .mlog extension
+  if !filesFullPath[$!x].fullName().matchwild('*.mlog') then
+    !lines = !filesFullPath[$!x].readfile()
+    !Processed = False
+    -- Process each line in the .mlog file
+    do !y indices !lines
+      
+      if !lines[$!y].matchwild('*1 Failed*') then
+        !FilesWithErrors.append(!filesFullPath[$!x])
+        !string = 'Failed'
+        --$p Failed
+        !csvLines.append('$!fileNameDotExtension,$!dtm,Failed,=HYPERLINK("$!filesFullPath[$!x]")')
+        skip
+      endif
+      if !lines[$!y].matchwild('*Summary=*') then
+        !Processed = True
+      endif
+
+    enddo
+        if !Processed.eq(False) then
+          !FilesWithErrors.append(!filesFullPath[$!x])
+          !csvLines.append('$!fileNameDotExtension,$!dtm,NotProc,=HYPERLINK("$!filesFullPath[$!x]")')
+        endif  
+  -- Check if the file has .matc extension
+  elseif !filesFullPath[$!x].fullName().matchwild('*.matc') then
+    !lines = !filesFullPath[$!x].readfile()
+    do !z indices !lines
+      if !lines[$!z].matchwild('  -2') then
+        !FilesWithErrors.append(!filesFullPath[$!x])
+        !string = '-2'
+        --$p -2
+        !csvLines.append('$!fileNameDotExtension,$!dtm,-2,=HYPERLINK("$!filesFullPath[$!x]")')
+        skip
+
+      endif    
+    enddo
+  -- skip if not .mlog or matc file
+  else
+    skip
+  endif
+
+enddo
+
+!numberOfFiles = !FilesWithErrors.size()
+$p Number of error files is $!numberOfFiles
+if !numberOfFiles.gt(0) then
+  !csvFile = object file('$!matDir\EmmNoLoads.csv')
+  !csvFileName = !csvFile.entry()
+  !csvFile.writefile('over',!csvLines)
+  handle(41,319)
+    !!alert.message('Please close Excel file $!csvFileName$n.')
+  elsehandle none
+    syscom 'start $!csvFile'
+  endhandle
+  $p $!numberOfFiles Found that contain errors
+else  
+  $p $!deliverableFolder\MATERIALS - No MLOG or MATC errors found for EMM Load
+  $p $!numberOfFiles Found that contain errors
+endif  
+  
+  $p -------------------------------------------------------------------------
+------------------------------------------------------------------------
+define method .init()
+------------------------------------------------------------------------
+  --!this.jogval.val  = '1'
+endmethod
+
+------------------------------------------------------------------------
+define method .cancel()
+------------------------------------------------------------------------
+
+  kill !!DrawUtil
+
+endmethod
+------------------------------------------------------------------------
+define method .DelStraNote()
+------------------------------------------------------------------------
+  NOTE
+  handle any
+    !!alert.message('You must sit at a NOTE')
+    return
+  endhandle
+  var !stra coll all stra for note
+  do !x indices !stra
+    $!stra[$!x]
+    delete stra
+    handle any
+      $p $!!error.text
+      skip
+    endhandle
+  enddo  
+endmethod
+------------------------------------------------------------------------
+define method .DelThumbFiles()
+------------------------------------------------------------------------
+!UserDir = object file('%AVEVA_DESIGN_USER%')
+!FileArray = !UserDir.files()
+do !x indices !FileArray
+  if !FileArray[$!x].string().matchwild('*DrawThumbnailRefresh*.log') then
+    !Entry = !FileArray[$!x].entry()
+    !FileArray[$!x].deleteFile()
+    $p $!Entry deleted
+  endif  
+enddo
+endmethod
+------------------------------------------------------------------------
+define method .qDrwg()
+------------------------------------------------------------------------
+  DRWG
+  handle(2,111)
+    !!alert.message('Cannot access DRWG from level of CE')
+    return
+  endhandle
+  !lines = array()
+  !drwgNamn = namn
+  !CTLDetailed = :CTLDetailed
+  !CTLModified = :CTLModified
+  !CTLAdminLock = :CTLAdminLock
+  !CTLIssued = :CTLIssued
+  !CTLOwner = :CTLOwner
+  !BDCBarcode = :BDCBarcode
+  !BDCLogFile = :BDCLogFile
+  !BDCSourceElementName = :BDCSourceElementName
+  !BDCSourceElement = !!ce.:bdcsourceelement.name
+  handle any
+  endhandle
+  !BDCBatchNo = !!ce.:BDCBatchNo.string()
+  !BDCBatchDate = :BDCBatchDate
+  !BDCPurpose = :BDCPurpose
+  !BDCTemplateRef = :BDCTemplateRef
+  !BDCCheckStatus = :BDC_Check_Status
+  !BDCCheckStatusComment = :BDC_Check_Status_Comment
+  !BDCGenerationStatus = :BDC_Generation_Status
+  !BDCGenerationStatusComment = :BDC_Generation_Status_Comment
+  !BDCDrawingStatus = :BDC_Drawing_Status
+  !BDCDrawingStatusComment = :BDC_Drawing_Status_Comment
+  !BDCVoidStatus = :BDC_Void_Status
+  !BDCVoidStatusComment = :BDC_Void_Status_Comment
+  !BDCIssueStatus = :BDC_Issue_Status
+  !BDCIssueStatusComment = :BDC_Issue_Status_Comment
+  !MMSDisc = :MMSDisc
+  !CTLLocation = :CTLLocation
+  !PipeRef = :BDCSourceElement
+  if !PipeRef.neq(Nulref) then
+    !PCTLModified = !PipeRef.:CTLModified
+    !PCTLReleased = !PipeRef.:CTLReleased
+    !PCTLAdminLock = !PipeRef.:CTLAdminLock
+    !PCTLComplete = !PipeRef.:CTLComplete
+    !PMMSStatus = !PipeRef.:MMSStatus
+  else
+    !PCTLModified = 'Unset'
+    !PCTLReleased = 'Unset'
+    !PCTLAdminLock = 'Unset'
+    !PCTLComplete = 'Unset'
+    !PMMSStatus = 'Unset'  
+  endif
+  
+ !array = array()
+!array.append('$!drwgNamn,') 
+!array.append('CTLDetailed,$!CTLDetailed')
+!array.append('CTLModified,$!CTLModified')
+!array.append('CTLAdminLock,$!CTLAdminLock')
+!array.append('CTLIssued,$!CTLIssued')
+!array.append('CTLOwner,$!CTLOwner')
+!array.append('BDCBarcode,$!BDCBarcode')
+!array.append('BDCLogFile,$!BDCLogFile')
+!array.append('BDCSourceElementName,$!BDCSourceElementName')
+!array.append('BDCSourceElement,$!BDCSourceElement')
+handle any
+endhandle
+!array.append('BDCBatchNo,$!BDCBatchNo')
+!array.append('BDCBatchDate,$!BDCBatchDate')
+!array.append('BDCPurpose,$!BDCPurpose')
+!array.append('BDCTemplateRef,$!BDCTemplateRef')
+!array.append('BDCCheckStatus,$!BDCCheckStatus')
+!array.append('BDCCheckStatusComment,$!BDCCheckStatusComment')
+!array.append('BDCGenerationStatus,$!BDCGenerationStatus')
+!array.append('BDCGenerationStatusComment,$!BDCGenerationStatusComment')
+!array.append('BDCDrawingStatus,$!BDCDrawingStatus')
+!array.append('BDCDrawingStatusComment,$!BDCDrawingStatusComment')
+!array.append('BDCVoidStatus,$!BDCVoidStatus')
+!array.append('BDCVoidStatusComment,$!BDCVoidStatusComment')
+!array.append('BDCIssueStatus,$!BDCIssueStatus')
+!array.append('BDCIssueStatusComment,$!BDCIssueStatusComment')
+!array.append('MMSDisc,$!MMSDisc')
+!array.append('CTLLocation,$!CTLLocation')
+
+!array.append('PipeCTLModified,$!PCTLModified')
+!array.append('PipeCTLReleased,$!PCTLReleased')
+!array.append('PipeCTLAdminLock,$!PCTLAdminLock')
+!array.append('PipeCTLComplete,$!PCTLComplete')
+!array.append('PipeMMSStatus,$!PMMSStatus')
+
+!file = object file('%pdmsuser%\$!drwgNamn$n.csv')
+!file.writefile('over',!array)
+handle(41,319) 
+  !!alert.message('Make sure that $!file is not open in Excel')
+  return
+endhandle  
+syscom 'start $!file'  
+  
+endmethod
+------------------------------------------------------------------------
+define method .qRevi()
+------------------------------------------------------------------------
+ SHEE
+ handle(2,111)
+   !!alert.message('Cannot access SHEE from level of CE')
+   return
+ endhandle
+ !drwgNamn = namn of DRWG
+ !array = array()
+ --!array.append('Type,Seq,Revdate,Rvsnumber,Rvauthor,Approver,Stext,:BDCRevCheck,:BDCRevStress,:BDCRevSupp,:BDCRevLead,:BDCRevBy')
+ !array.append('DRWG,Type,Seq,Revdate,Rvsnumber,Rvauthor,Stext,:BDCRevBy,:BDCRevCheck,:BDCRevLead')
+
+ var !revi coll all revi for shee
+ do !x indices !revi
+   $!revi[$!x]
+   !DrwgName = namn of DRWG
+   !type = type          
+   !seq  = tyseq   
+   !Revdate = Revdate    
+   !Rvsnumber = Rvsnumber        
+   !Rvauthor  = Rvauthor         
+   !Approver  = Approver         
+   !Stext     = Stext    
+   !BDCRevCheck = :BDCRevCheck   
+   !BDCRevStress = :BDCRevStress         
+   !BDCRevSupp   = :BDCRevSupp   
+   !BDCRevLead   = :BDCRevLead   
+   !BDCRevBy     = :BDCRevBy
+   --!array.append('$!Type,$!Seq,$!Revdate,$!Rvsnumber,$!Rvauthor,$!Approver,$!Stext,$!BDCRevCheck,$!BDCRevStress,$!BDCRevSupp,$!BDCRevLead,$!BDCRevBy')
+   !array.append('$!DrwgName,$!Type,$!Seq,$!Revdate,$!Rvsnumber,$!Rvauthor,$!Stext,$!BDCRevBy,$!BDCRevCheck,$!BDCRevLead')
+   q type tyseq Revdate Rvsnumber Stext :BDCRevBy :BDCRevCheck :BDCRevLead
+ enddo
+
+!answer = !!alert.question('Open Excel file?')
+if !answer.eq('YES') then
+  !file = object file('%pdmsuser%\$!drwgNamn$n-REVI.csv')
+  !file.writefile('over',!array)
+  handle(41,319)
+    !!alert.message('Make sure the Excel file is closed before overwriting it.')
+    return
+  endhandle
+  syscom 'start $!file'
+endif
+
+endmethod
+--------------------------------------------------------------------------------
+define method .qStaval()
+--------------------------------------------------------------------------------
+!ce = ce
+!lines = array()
+!lines.append('TASKLB,REFNO,TYPE,SEQ,Function,PMLFunction,StatusUser,StatusDate,StatusRevision,StatusComment')
+var !staval coll all :STAVAL for DRWG
+handle(2,111)
+  !namety = !ce.namety
+  $p Cannot access DRWG from level of $!namety
+  return
+endhandle
+!DrwgName = Namn of DRWG
+do !x indices !staval
+  $!staval[$!x]
+  !type = type
+  var !refno refno
+  !seq = seq
+  !tasklb = name of tasklb
+  !function = attrib function
+  !pmlFunction = attrib PMLFunction
+  !StatusUser = attrib :StatusUser
+  !StatusDate = attrib :StatusDate
+  !StatusComment = attrib :StatusComment
+  !StatusRevision = attrib :StatusRevision
+  !lines.append(|$!tasklb,ce $!refno,$!type,$!seq,$!function,$!pmlFunction,$!statusUser,$!StatusDate,$!StatusRevision,$!statusComment|)
+enddo
+$!ce
+!file = object file('%PDMSUSER%\$!DrwgName$n-stavalReport.csv')
+!file.writefile('over',!lines)
+syscom 'start $!file'
+endmethod
+-----------------------------------------------------------------------------------
+define method .QUserMod()
+-----------------------------------------------------------------------------------
+    !userMod = UserMod
+    var !user eval name for all user with matchw(desc,'*$!userMod$n)')
+    if !user.empty() then
+      !userName = 'Unknown'
+    else
+      !userName = !user[1]
+    endif
+    !Namety = Namety
+    !LastMod = Lastmod
+    $p ---------------------------------------------------
+    $p CE is $!Namety
+    $p UserMod - $!userName
+    $p Last modified $!LastMod
+endmethod
+
+--------------------------------------------------------------------------------
+define method .Note(!num is real)
+--------------------------------------------------------------------------------
+  tol .0001
+  !sheetName = name of shee
+  handle any
+    !!alert.message('You must sit at or below the SHEE level')
+    return
+  endhandle
+  !noteName = !sheetName & '/Settlement'
+  $!noteName
+  handle any
+    new note $!noteName
+    handle any
+      !!alert.message('NOTE $!noteName cannot be created.')
+      return
+    endhandle
+  endhandle
+  Lheight 0.5/32in
+  Txcolour White 
+  !SytmName = '/PROJ-E3D/STICKERS/PIPING/NOTES/' & !num.string()
+  new symb Tmrf $!SytmName AT@
+
+endmethod
+--------------------------------------------------------------------------------
+define method .qUDA()
+--------------------------------------------------------------------------------
+  !ce = ce
+  var !uda coll all uda
+  !lines = array()
+  !lines.append('Dbname,UWRLD,UGROUP,UDA,Desc,Ablength,Utype,Ulength,EleList')
+  do !x indices !uda
+    $!uda[$!x]
+    !dbname = dbna
+    !uwrld = namn of uwrld
+    !ugroup = namn of ugroup
+    handle(2,111)
+      !ugroup = 'None'
+    endhandle  
+    !udaName = namn
+    !Desc = Description
+    !Desc = !Desc.replace(|'|,|:|)
+    !Ablength = Ablength
+    !Utype = Utype
+    !Ulength = Ulength
+    !Elelist = Elelist
+    !EleString = ''
+    do !y indices !Elelist
+      !EleString = !EleString & !Elelist[$!y] & ':'
+      handle (2,442) $* The concatenated text is too long
+        $p CE is $!!ce.name - The concatenated text is too long in Elelist
+        skip
+      endhandle
+    enddo
+    if !EleString.length().gt(50) then
+      !EleString = '2D UDA'
+    endif  
+    !Udname = Udname
+    !lines.append('$!dbname,$!uwrld,$!ugroup,$!udaName,$!Desc,$!Ablength,$!Utype,$!Ulength,$!EleString')
+  enddo
+  !file = object file('%PDMSUSER%\UdaReport.csv')
+  !file.writefile('over',!lines)
+  syscom 'start $!file'
+  $!ce
+endmethod
+--------------------------------------------------------------------------------
+define method .reorder()
+--------------------------------------------------------------------------------
+
+  if dbwrite eq f then
+    !!alert.message('You do not have write access to this database')
+    return
+  endif
+
+  VAR !COLL EVALUATE NAME FOR MEM OF CE
+
+  !MCOU = !COLL.SIZE()
+  !COLL2 = !COLL.SORT()
+
+  DO !MCOUNT FROM 1 TO !MCOU
+    VAR !USER USER
+    VAR !CLAIM USERCLAIM OF $!COLL2[$!mcount]
+    !CLAIM = !CLAIM.UPCASE()
+    IF (|$!CLAIM| EQ |$!USER| OR |$!CLAIM| EQ |UNSET|) THEN
+      REORDER $!COLL2[$!MCOUNT] AFTER $!MCOU
+    ELSE
+      $P $!COLL2[$!MCOUNT] is claimed by $!CLAIM
+    ENDIF
+  ENDDO
+
+endmethod
+--------------------------------------------------------------------------------
+define method .repositionAutoTag()
+--------------------------------------------------------------------------------
+var !auto coll all laye with matchw(name,'*TAG-PCOM') for drwg
+$!auto[1]
+handle any
+  $P Cannot find TAG-PCOM layer
+  return
+endhandle
+var !slab coll all slab with Tmrf eq  /PROJECT-E3D/LABELS/PIPE/NAME for laye
+do !x index !slab
+  $!slab[$!x]
+  !name = name
+  -- Skip the template GLAB
+  skip if !name.matchwild('*TAG-PCOM/ATTACHMENT-1/GLAB')
+  !adeg = adeg
+  !xypos = xypos
+  var !vside vside of ddna of slab
+  if !vside.eq('Right Up Inside') or !vside.eq('Down Right Inside') or !vside.eq('Down Left Inside') or !vside.eq('Right Down Inside') then
+    !XyposVal = '1in -1in'
+  elseif !vside.eq('Up Right Inside') or !vside.eq('Up Left Inside') or !vside.eq('Down Left Inside') then
+    !XyposVal = '1in 2in'
+  endif
+  if !adeg.neq(270degree) then
+    Adeg 270
+    handle any
+      $p Cannot set Adeg
+      return
+    endhandle
+  endif
+  
+  Xypos $!XyposVal
+  handle any
+    $p Cannot set Xypos
+  endhandle
+
+  
+enddo
+endmethod
+--------------------------------------------------------------------------------
+define method .RevCircle()
+--------------------------------------------------------------------------------
+  tol .0001
+  !sheetName = name of shee
+  handle any
+    !!alert.message('You must sit at or below the SHEE level')
+    return
+  endhandle
+  !noteName = !sheetName & '/RevCloud'
+  $!noteName
+  handle any
+    new note $!noteName
+    handle any
+      !!alert.message('NOTE $!noteName cannot be created.')
+      return
+    endhandle
+  endhandle
+  
+  new circle diam 2mm
+  NLStyle Solid 
+  NLColour Cyan 
+  FStyle SolidFilled 
+  FColour Cyan
+  at@
+endmethod
+--------------------------------------------------------------------------------
+define method .RevCloud(!real is REAL)
+--------------------------------------------------------------------------------
+
+  --tol .0001  - This command now generates an error
+  !sheetName = name of shee
+  handle any
+    !!alert.message('You must sit at or below the SHEE level')
+    return
+  endhandle
+  !noteName = !sheetName & '/RevCloud'
+  $!noteName
+  handle any
+    new note $!noteName
+    handle any
+      !!alert.message('NOTE $!noteName cannot be created.')
+      return
+    endhandle
+  endhandle
+  
+  !ownerType = type
+  !BF = !real
+  handle (47,62)
+    !BF = 2mm  $* Changed from 12mm to 2mm
+  endhandle
+  $!noteName
+  New stra fpt @ tpt @ refresh
+  var !ipoint ptfarray[1]
+  
+  do
+    refresh
+    new stra tpt @
+    handle (61,528)
+      new stra tpt $!ipoint
+      golabel /Bloops
+    endhandle
+  enddo
+  
+  label /Bloops
+  
+  $!ownerType
+  var !!Slist coll all STRA for CE
+  $!!slist[1]
+  var !spoint ptfarray[1]
+  
+  New Outl nlpn 56
+  
+  var !outlref refno
+  
+  do !x values !!slist
+    $!x
+    !LADEG = !!ce.adeg
+    !LTDEG = !!ce.adeg
+    !Llen = !!ce.leng
+    $* !BF = 12mm
+    !Novrtx = (NINT (!llen / !BF))
+    !BL = !!ce.leng / !Novrtx  $* Calculator error - division by zero
+  
+    If (!LADEG LT 0) THEN
+      var  !TEMP (360 - (NEG ($!LADEG)))
+      !LADEG = !TEMP.REAL()
+    EndIf
+  
+    If (!LADEG GE 270) then
+      !ta = (90 - (NINT (!!ce.adeg)))
+      !yl = (!BL * (COS (!ta)))
+      !xl = (!BL * (SIN (!ta)))
+     
+    ElseIf (!LADEG GE 180) then
+      !ta = (180 - (NINT (!!ce.adeg)))
+      !xl = (-1 * (!BL * (COS (!ta))))
+      !yl = (!BL * (SIN (!ta)))
+     
+    ElseIf (!LADEG GE 90) then
+      !ta = (!!ce.adeg - 90)
+      !yl = (!BL * (COS (!ta)))
+      !xl = (-1 * (!BL * (SIN (!ta))))
+     
+    Else
+      !ta = !!ce.adeg
+      !xl = (!BL * (COS (!ta)))
+      !yl = (!BL * (SIN (!ta)))
+     
+    EndIF
+  
+    -- $p Processing Vertex....
+  
+    var !spoint ptfarray[1]
+    var !epoint ptfarray[2]
+    $!outlref
+    var !vrtxcount mcount
+    vrtx $!vrtxcount
+    handle (2,113)
+    endhandle
+  
+    !bulgeFactor = 0.7mm 
+    new vrtx at $!spoint bulge $!bulgeFactor
+  
+    do !y to ($!novrtx - 1)
+      new vrtx copy prev bulge $!bulgeFactor
+      by x $!xl by y $!yl
+    enddo
+  
+  enddo
+  
+  new vrtx by x $!xl by y $!yl bulge $!bulgeFactor
+  
+  outl
+  
+  do !x values !!slist
+     $!x
+     delete stra
+  enddo
+  
+  -- $p done!
+  
+endmethod
+--------------------------------------------------------------------------------
+define method .RevTriangle(!rev is real)
+--------------------------------------------------------------------------------
+  --tol .0001
+  !sheetName = name of shee
+  handle any
+    !!alert.message('You must sit at or below the SHEE level')
+    return
+  endhandle
+  !noteName = !sheetName & '/RevCloud'
+  $!noteName
+  handle any
+    new note $!noteName
+    handle any
+      !!alert.message('NOTE $!noteName cannot be created.')
+      return
+    endhandle
+  endhandle
+  
+  !SytmName = '/Rev' & !rev.string() & 'Triangle10mm'
+  new symb Tmrf $!SytmName AT@
+
+endmethod
+--------------------------------------------------------------------------------
+define method .TriangleSel(!rev is real)
+--------------------------------------------------------------------------------
+  !type = type
+  if !type.neq('SYMB') then
+    --!!alert.message('You must sit at a SYMB element')
+    --return
+    id symb@
+  endif
+  
+  if !rev.eq(1) then
+    Tmrf /Rev1Triangle10mm
+  elseif !rev.eq(2) then
+    Tmrf /Rev2Triangle10mm
+  elseif !rev.eq(3) then
+   Tmrf /Rev3Triangle10mm
+  elseif !rev.eq(4) then
+    Tmrf /Rev4Triangle10mm
+  endif
+  
+endmethod
+------------------------------------------------------------------------
+define method .ViewSymbology()
+------------------------------------------------------------------------
+
+$m\\Hou99appsp00128\projcfg\SRO8\PLA\3D\PROJE3D\PMLLIB\StructuralPackage\Macro\PROG1.MAC
+
+------------------------------------------------------------------------
+
