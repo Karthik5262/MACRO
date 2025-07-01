@@ -1,0 +1,80 @@
+var !collpipmem coll all bran mem with matchwi(name of ZONE,'/PL213-FW')
+!getarr = ARRAY()
+!getaddsize = !collpipmem.size()
+!addsize = $!getaddsize + 1
+do !a from 2 to $!addsize
+!b = $!a - 1
+!getarr[$!a] = '$!collpipmem[$!b]'
+enddo
+!getdetails = ARRAY()
+Do !a from 2 to !getarr.size()
+$!getarr[$!a]
+!b = $!a - 1
+var !getmem CE
+!getmemtype = !!CE.Type
+var !getmemSite site of ce
+var !getmemZone zone of ce
+var !getmtoc Mtocomponent of ce
+handle(2,201)
+!getmtoc = 'Not defined'
+endhandle
+!getstyp = !!CE.Stype
+var !getcomment Comment of spr
+var !getmesc :MESC of spr
+var !getdesc dtxr
+handle(2,232)
+!getdesc = 'Not defined'
+endhandle
+var !getspec spow
+handle any
+!getspec = 'Not defined'
+endhandle
+var !getmat mtxx
+handle(2,232)
+!getmat = 'Not defined'
+endhandle
+var !getmemsiz1 p1bor
+	handle (2,201) (2,208)
+		!getmemsiz1 = '0mm'
+	endhandle
+if(!!CE.Type NEQ 'TUBI') then
+	var !getmemsiz2 p2bor
+	handle (2,201) (2,208)
+		!getmemsiz2 = '0mm'
+	endhandle
+else
+	!getmemsiz2 = '0mm'
+endif
+if(!!CE.Type EQ 'TEE' or !!CE.Type EQ 'OLET') then
+	var !getmemsiz3 p3bor
+	handle (2,201) (2,208)
+		!getmemsiz3 = '0mm'
+	endhandle
+else
+	!getmemsiz3 = '0mm'
+endif 
+var !collpspec pspec of pip
+!getpspec = !collpspec.replace('/CRX_','')
+var !getrating rating of spec of spr
+handle (2,115)
+	!getrating = 'not defined'
+endhandle
+var !getpip namn of pipe
+if(!!CE.Type EQ 'TUBI') then
+	!getquantity = !!CE.ltlen
+else
+	!getquantity = 1
+endif
+handle any
+endhandle
+!getarr[$!a] = '$!b' + '[' + '$!getstyp' + '[' + '$!getcomment' + '[' + '$!getmesc' + '[' + '$!getmemsiz1' + '[' + '$!getmemsiz2' + '[' + '$!getmemsiz3' + '[' + '$!getpspec' + '[' + '$!getrating' + '[' + '$!getpip' + '[' + '$!getquantity' + '[' + '$!getmem' + '[' + '$!getmemtype' + '[' + '$!getmtoc' + '[' + '$!getmemSite' + '[' + '$!getmemZone' + '[' +'$!collpspec' + '[' + '$!getspec' + '[' + '$!getdesc' +'[' + '$!getmat' 
+enddo
+--!getarr[1] = 'ITEM NO. [ SHORT CODE [ COMPONENT [ MESC NO [ DESCRIPTION [ MATERIAL DES[ SIZE1 (DN) [ SIZE2 (DN) [ SIZE3 (DN) [ PIPING CLASS [ RATING [ PEFS [ LINE NUMBER [ QUANTITY [ MODEL REFERENCE [ COMPONENT TYPE [ MTOC Status [ site [ zone'
+!getarr[1] = 'ITEM NO. [ SHORT CODE [ COMPONENT [ MESC NO  [ SIZE1 (DN) [ SIZE2 (DN) [ SIZE3 (DN) [ PIPING CLASS [ RATING [ LINE NUMBER [ QUANTITY [ MODEL REFERENCE [ COMPONENT TYPE [ MTOC Status [ site [ zone [ pipe spec [ Component Spech [ DESCRIPTION [ MATERIAL DES'
+var !getdate clock date
+!repldate = !getdate.replace(' ','')
+!getpath = 'C:\Temp\Piping_MTO_Report_AllScope_' + '$!repldate' + '.txt'
+!outreport = object FILE('$!getpath')
+!outreport.writefile('WRITE',!getarr)
+$P File saved successfully in $!getpath
+$P File saved as txt file instead of csv due to presence of comma in the spco comment attribute
