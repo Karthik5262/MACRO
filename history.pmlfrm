@@ -1,0 +1,242 @@
+$(
+
+------------------------------------------------------------------------
+
+[COPYRIGHT]
+copyright   = Copyright © AVEVA S.A.
+
+[FILE]
+file        = checknozzle.pmlfrm
+type        = General Form
+group       = EG: 
+keyword     = EG: ADMIN
+module      = EG:
+replaces    = -
+
+[CVS]
+created     = Thursday, June 14, 2007
+revision    = $Revision$
+author      = $Author$
+date        = $Date$
+
+[DESCRIPTION]
+description = Fill description here
+
+------------------------------------------------------------------------
+
+$)
+
+--Declare form
+  setup form !!history dialog docking $* resize
+
+  --Form data
+    !This.formTitle     = 'Modifications History' $* Titulo de la ventana
+    !This.iconTitle     = '' $* Titulo del icono cuando se minimiza la ventana (usado en UNIX). No se usa
+    !This.callback      = '!This.Init()'
+    !This.cancelCall    = '!This.Cancel()'
+    !This.formRevision  = ' $Revision$ '
+    member .mbrCe is DBRef
+
+  --General Settings
+    path down
+
+  --Form definition
+  --Cadre sélection CE
+    frame .frmCe anchor L+R+T 'Selection'
+      button .btnCe 'CE' callback '!This.Apply()' $* al pinchar lanza el metodo Apply de la form
+      path right
+      paragraph .parCe anchor L+R width 40 $* Tamaño del campo explicito anclado a la derecha
+    exit $* Fin de la definición del recuadro
+    path down
+  
+  --Change Path
+  
+  --Create SESS list
+    list .lstSess  anchor ALL |SESSIONS| callback '!This.ClickList()' columns single zerosel width 65 height 20 $* anchor: ancla el elemento
+
+    
+  --Members
+    member .Array is Array
+
+--End of form definition
+  exit
+
+
+------------------------------------------------------------------------
+--
+-- Method:      checknozzle
+--
+-- Description: Constructor
+--
+-- Method Type: Function/Procedure
+-- Arguments:
+--   [#] [R/RW] [Data Type] [Description]
+-- Return:
+--   [Data Type] [Description]
+--
+------------------------------------------------------------------------
+
+--Start of method
+  define method .history()
+  --Define table headings
+    !headings = 'TYPE,USER,DATE,SESSION,COMMENT'
+    !This.lstSess.SetHeadings(!headings.split(','))
+
+--End of method
+  endmethod
+
+
+------------------------------------------------------------------------
+--
+-- Method:      Init
+--
+-- Description: Runs every time form is displayed
+--
+-- Method Type: Function/Procedure
+-- Arguments:
+--   [#] [R/RW] [Data Type] [Description]
+-- Return:
+--   [Data Type] [Description]
+--
+------------------------------------------------------------------------
+
+--Start of method
+  define method .Init()
+--Text to ask for en element
+  !This.parCe.val = 'Select element and click CE'
+
+--Clear list
+  !This.lstSess.clear()
+  
+--Clear CE
+  !This.mbrCe = object DBRef()
+  
+--End of method
+  endmethod
+
+
+------------------------------------------------------------------------
+--
+-- Method:      Apply
+--
+-- Description: Runs when form is applied
+--
+-- Method Type: Function/Procedure
+-- Arguments:
+--   [#] [R/RW] [Data Type] [Description]
+-- Return:
+--   [Data Type] [Description]
+--
+------------------------------------------------------------------------
+
+--Start of method
+  define method .Apply()
+
+--Get the CE
+  !This.mbrCe = !!CE
+
+--Show CE name
+  !This.parCe.val = !This.mbrCe.name
+
+--Get the list of Sessions
+  !This.getSessList()
+
+--End of method
+  endmethod
+
+------------------------------------------------------------------------
+--
+-- Method:      getSessList
+--
+-- Description: Runs when form is applied
+--
+-- Method Type: Function/Procedure
+-- Arguments:
+--   [#] [R/RW] [Data Type] [Description]
+-- Return:
+--   [Data Type] [Description]
+--
+------------------------------------------------------------------------
+
+--Start of method
+  define method .getSessList()
+
+--Check CE has been selected
+  if (!This.mbrCe.unset() OR !This.mbrCe.badref()) then
+   -- !This.tglNotConnectedOnly.val = FALSE
+    !!Alert.warning('Please select an element and click CE button')
+    return
+  endif
+
+!sessions = history of CE
+!creation = !sessions.size()
+do !A index !sessions
+    !T[2][!A] = sessuser $!sessions[$!A]
+    !T[3][!A] = sessdate $!sessions[$!A]
+    !T[4][!A] = String($!sessions[$!A])
+    !T[5][!A] = sesscomment $!sessions[$!A]
+enddo
+do !A index !sessions
+    !T[1][!A] = 'Modified by'
+enddo
+!T[1][1] = 'Last modified by'
+!T[1][!creation] = 'Created by'
+
+
+--Load array in list
+  !This.lstSess.SetColumns(!T)
+
+--End of method
+  endmethod
+
+
+------------------------------------------------------------------------
+--
+-- Method:      Cancel
+--
+-- Description: Runs when form is cancelled
+--
+-- Method Type: Function/Procedure
+-- Arguments:
+--   [#] [R/RW] [Data Type] [Description]
+-- Return:
+--   [Data Type] [Description]
+--
+------------------------------------------------------------------------
+
+--Start of method
+  define method .Cancel()
+
+--End of method
+  endmethod
+
+------------------------------------------------------------------------
+--
+-- Method:      ClickList
+--
+-- Description: Runs when you click on an element of the list
+--
+-- Method Type: Function/Procedure
+-- Arguments:
+--   [#] [R/RW] [Data Type] [Description]
+-- Return:
+--   [Data Type] [Description]
+--
+------------------------------------------------------------------------
+
+--Start of method
+  define method .ClickList()
+
+--End of method
+  endmethod
+
+
+
+$(
+
+The comment block contains the file history: do not edit this section!
+
+$Log$
+
+$)
+
