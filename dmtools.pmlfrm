@@ -1,0 +1,169 @@
+
+--- Written by sathish Kumar Baskar Emailto: sathish.baskar@kbr.com
+
+setup Form !!DMTOOLS Dialog dock right
+
+Title |Draw Manager Tools|
+var !user user
+	button.B1 |Refresh| CallBack |!this.Refresh()| width 6
+	button.help |?| CallBack |!!alert.message('Contact : Sathish.baskar@kbr.com')| Tooltip |Help|
+	frame.f1 foldup |Draw Manager Tools| AT X0 ymax +0.5 WIDTH 40 HEIGHT 1
+		button.AddRevision |Add New Revision| at x0 ymax+0.5 Tooltip |Add New Revision| CallBack |!this.AddRevision()| width 15
+ 		button.clr|CLR| Tooltip'colour for revcloud' callback|NLCOLOUR RED| width 10
+
+
+
+
+
+	Exit
+
+Exit
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Define Method .Refresh()
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+	Kill !!DMTOOLS
+	SHOW !!DMTOOLS
+Endmethod
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Define Method .GetDate() is string
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+!dfString = !!bdccntrl.getDateFormat()
+!monthFormat = !!bdccntrl.getMonthFormat()
+!df = object DATEFORMAT(!dfString)
+!df.month(!monthFormat)
+!dt = object DATETIME()
+
+return !df.string(!dt)
+
+Endmethod
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Define Method .AddRevision()
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+var !sess SESSUSER
+
+import 'PMLFileBrowser'
+handle any
+endhandle
+
+using namespace 'Aveva.Core.Presentation'
+!browser = object PMLFILEBROWSER('OPEN')
+!browser.show('%pdmsuser%', '', 'Load text File', false, 'Text file (*.txt)|*.txt', 2)
+!file = Object File(!browser.file())
+
+if !file.unset() then
+	return
+Endif
+if !file.readfile().size() eq 0 then
+	return
+Endif
+
+Do !line values !file.readfile()
+	skip if !line.trim() eq ''
+	!data = !line.split()
+	!pipe = !data[1].dbref()
+	Handle Any
+		skip
+	Endhandle
+	
+	if !data.size() lt 11 then
+		$P Skipped, Rev Data missing...
+		skip
+	Endif
+
+	!data.removefirst()
+	!stop = False
+	Do !x from 1 to 10
+		if !data[$!x].length().between(2,3).not() then
+			!stop = TRUE
+			$P <$!data[$!x]> Initials shall be 2 to 3 characters only...
+			break
+		Endif
+	Enddo
+	skip if !stop
+
+	!drwg = '/SISO-' + !pipe.flnn
+
+	!checkstatus = :BDC_Check_Status of $!drwg
+	Handle Any
+		q var !!error.text
+		skip
+	Endhandle
+	q var !drwg
+	if !checkstatus eq 'Released For Issue' then
+		$P Release drwg to Detailed First...
+		skip
+	Endif
+
+	!sheet = $!drwg_S1
+	!liby = $!drwg_LIBY
+	
+	!revs = !sheet.srevay.invert()
+	if !revs.size() eq 0 then
+		!rvdate = !!bdccntrl.getRevDate()
+		$!sheet
+		NEW REVISION
+			!revs[1] = CE
+			RVDT '$!rvdate'
+			RVSN '*'
+			RVAU '$!sess'
+		END
+	Endif
+	
+	!rev = !revs[1].rvsnum
+	if !rev.match('*') eq 0 then
+		$P Release drwg to Detailed First...
+		skip
+	Endif
+	-- !currev = !rev.before('*')
+	$P *** Setting Revision <$!rev> ***
+	
+	!func[1] 	= 'Released_For_Issue'
+	!func[2] 	= 'MTO_Final_Check'
+	!func[3] 	= 'Final_Stress_Check'
+	!func[4] 	= 'Yellow_Line_Backcheck'
+	!func[5] 	= 'Back_Model'
+	!func[6] 	= 'Pipe_Support_Check'
+	!func[7] 	= 'Preliminary_Stress_Check'
+	!func[8] 	= 'Yellow_Line_Check'
+	!func[9] 	= 'MTO_Check'
+	!func[10] 	= 'CAD_Check'
+
+	!date = !this.GetDate()
+	$!liby
+	NEW LOCATE TASKLB $!drwg_STAT
+	if !rev eq '*' then
+		DELETE TASKLB MEM
+	Else
+		Var !getcur COLL ALL :STAVAL with :StatusRevision eq '$!rev' FOR $!drwg_STAT
+		DO !sta values !getcur
+			$!sta
+			DELETE :STAVAL
+		Enddo
+	Endif
+		Do !x from 1 to 10
+			!pmlfunc = !func[!x].replace('_',' ')
+			NEW :STAVAL
+				FUNC '/$func'
+				PMLFUN '$!pmlfunc'
+				:StatusUser '$!data[$!x]'
+				:StatusDate '$!date'
+				:StatusRevision '$!rev'
+			END
+		Enddo
+	END
+
+	$!drwg
+	:BDC_Check_Status 'Released For Issue'
+
+Enddo
+
+!!alert.message('Done...!')
+!!bdcui.runUpdateStatusOnGrids()
+
+Endmethod
+
