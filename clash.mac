@@ -1,0 +1,151 @@
+
+
+rem all
+!checkelems = array()
+-- !checkelems[1] = CE
+!modules = array()
+!area = 'I'
+!n = 1
+!modules.append('KBR-1130-0001/PI')
+-- !modules.append('116')
+-- !modules.append('1Z0')
+
+--Do !ind from 101 to 115
+-- Do !ind from 116 to 133
+-- Do !ind from 134 to 142
+	--!modules.append(!ind.string())
+--Enddo
+
+
+--Do !ind from 134 to 141
+	--!modules.append(!ind.string())
+--Enddo
+
+DESCLASH
+OVERRIDE ON
+REMOVE OBST All
+--some setting
+NOCHECK WITHIN BRAN
+NOCHECK WITHIN EQUI
+IGNORE CONNECTIONS
+IGNORE TOUCHES
+
+Do !mod values !modules
+	-- !dept = split('M S E I')
+	Do !d values split('P')
+		!ref = /$!d$!area$!mod
+		Handle Any
+			q var !!error.text
+			skip
+		Endhandle
+		!checkelems.append(!ref)
+	Enddo
+	-- OBST /LTS_STR_CONNECTION
+	-- Handle Any
+	-- Endhandle
+	-- skip
+	-- !dept = split('P M S E I')
+	!dept = split('P S E I')
+	Do !x indices !dept
+		!sitenam = '/' + !dept[$!x] + !area + !mod.STRING()
+		!ref = $!sitenam
+		Handle Any
+			q var !!error.text
+			skip
+		Endhandle
+		-- !sites[!n] = !ref.name
+		-- !n = !n + 1
+		OBST $!ref
+		Handle Any
+		Endhandle
+	Enddo
+Enddo
+
+-- !sitesstr = !sites.join(' ')
+
+-- q var !sitesstr
+
+if undefined(!!avaclasherui) then
+	SHOW !!avaclasherui
+Elseif !!avaclasherui.shown() Eq F then
+	SHOW !!avaclasherui
+Endif
+
+-- Do !site values !checkelems
+
+	-- !elem[1] = !site
+	-- !nam = !site.purp + '_' + !site.Flnn + '.xls'
+	!nam = 'LTS_clashes.xls'
+	!!avaclasherui.findClashes(!checkelems)
+	!!avaclasherui.getResults()
+	!!avaclasherui.displayClashes()
+	!path = object file('%AVEVA_DESIGN_USER%\PLA\$!nam')
+	!!avaclasherui.dbctrl.SAVEGRIDTOEXCEL(!path.pathname() + '\' + !path.entry())
+	-- rem all
+-- break
+-- Enddo
+!!alert.message('Clash Report Completed...')
+
+aid clear all
+
+
+
+
+return
+!mod = 'L101'
+/P$!mod
+var !pipes coll all pipe for CE
+!dept = split('M S P E I')
+Do !x indices !dept
+	!sites[!x] = '/' + !dept[$!x] + !mod
+Enddo
+!sitesstr = !sites.join(' ')
+
+!strClashes = '%AVEVA_DESIGN_USER%\' + !mod + '.csv'
+!fileClashes = object FILE( !strClashes)
+!lines = ARRAY()
+
+!sep = ','
+   --run desclash
+   DESCLASH
+
+   OVERRIDE ON
+   REMOVE OBST All
+   OBST $!sitesstr
+   --some setting
+   NOCHECK WITHIN BRAN
+   NOCHECK WITHIN EQUI
+   INCLUDE CONNECTIONS
+   INCLUDE TOUCHES
+do !pipe values !pipes
+   $!pipe        
+  
+   CHECK CE
+   VAR !allClashes CLASH COUNT CLASHES
+   -- q var !allClashes
+   
+   !tempClash = object AVACLASH(1)
+   Handle ANy
+   skip
+   Endhandle
+   -- q var !tempClash.clashType
+   -- q var !tempClash.clashExtent
+
+    --Get the clash items
+    -- q var !tempClash.clasherType
+   -- return
+   
+   do !i from 1 to !allClashes.real()
+       Var !Second CLASH $!i SECOND
+       Var !First  CLASH $!i First
+       Var !Pos    CLASH $!i POSITION
+       Var !Type   CLASH $!i Type
+	   !fir = !first.split('(')[1].dbref().fullname + ' (' + !first.after('(')
+	   !sec = !Second.split('(')[1].dbref().fullname + ' (' + !Second.after('(')
+       !lines.append(!type + !sep + !fir + !sep + !sec + !sep + !Pos)
+   enddo
+   
+enddo
+!fileClashes.writeFile('OVERWRITE', !lines)
+-- q var !lines
+SYSCOM 'START $!fileClashes'
