@@ -1,0 +1,1243 @@
+
+-- /X6P2D00-PS0262
+-- HS RAI - 18/04/2018
+
+--  **********************************************************************************************
+--  FILENAME    : KBRBaseplates.pmlfrm
+--  WRITTEN BY  : Hardev Rai
+--  DATE        : 04 Sep 2019
+--  DESCRIPTION : To create pipe support base plates/cap plates cut gensecs by plate thickness.
+--              : The form auto sizes plates and allows for custom sizes as well as giving 
+--              : the functionality of deleting the plate and extending the gensec to original
+--              : length.
+--  **********************************************************************************************
+--  NOTES       :  KBRMCode now includes material code eg  CS,SS 
+--  REVISION    :  2  
+--              : Delete ENDATU code added 12 May 2020
+--              : Standard Baseplate thickness changed to 15mm 13 May 2020 & start size changed from 150+50 to 50 + 50
+
+import 'GridControl'
+handle any
+endhandle
+
+
+layout form !!KBRBaseplates  at xr 1 yr 0
+--layout form !!KBRBaseplates size 100 16 at xr 1 yr 0
+cancelcall |!this.dismiss()|
+using namespace 'Aveva.Core.Presentation'
+
+bar
+  Add |Help|       _HelpMenu
+menu _HelpMenu
+    add |UserGuide| |!this.UserGuide()|
+exit
+
+!this.formtitle = 'KBR Base Plate / Cap Plate Creation - Revision 02 - March 2020 '
+!this.initcall  = |!this.SupportInit()|
+
+member .width is REAL
+member .depth is REAL
+member .sctntype is STRING
+member .SctnNam is STRING
+member .FrmwNam is STRING
+member .STRUNam is STRING
+member .PlateX is REAL
+member .PlateY is REAL
+member .CapPlateX is REAL
+member .CapPlateY is REAL
+member .GenStart  is POSITION
+member .GenEnd is POSITION
+member .SteelDir is STRING
+member .SteelMode is BOOLEAN
+member .SteelOri  is STRING
+member .gensecDbref  is DBREF
+member .plateThkness is REAL
+member .originalPosition IS POSITION
+member .NewPos IS POSITION
+member .itemName  is STRING
+member .DirectionString is STRING
+member .KBRCode is STRING
+member .SteelJus is STRING 
+member .SteelAngle is REAL
+member .BoltSizeArray is ARRAY
+member .shortMaterialCode is ARRAY
+
+
+frame .frame1 
+
+--para  .HeadingPlinthPlate at xmin pixmap "KBRSupportTools>ID_PLINTH_PLATE" height 140 width 470
+para  .HeadingPlinthPlate at xmin form text |Plinth Plate|
+--para  .HeadingCapPlate  at xmin pixmap "KBRSupportTools>ID_CAP_PLATE" height 140 width 470
+para  .HeadingCapPlate  at xmin form text |Cap Plate|
+--para  .HeadingBasePlate at xmin pixmap "KBRSupportTools>ID_BASE_PLATE" height 140 width 470
+para  .HeadingBasePlate at xmin form text |Base Plate|
+exit
+path down
+
+
+frame .frame2 'Steel Details' 
+path right
+button .idSteel  at xmin |[1] Identify Steel| call |!this.applyidSteel()|
+text   .SteelName at xmax .idSteel +2  call || width 15 is string
+option   .Material 'Material Code' at xmax .SteelName +2 at ymin call |!this.MaterialInit()| width 15
+--text   .SteelName at xmax .idSteel +2 call || width 14 is string
+path down
+option .SelectPlate   '[2] Select Plate Type '     at xmin .idSteel ymax +1 call |!this.BasePlate()| width 10
+option .Platelocation '[3] Select Plate Location ' at xmax .SelectPlate +3 ymin call |!this.PlateLoc()|  width 10
+option .SelectPlinthPlate   'Select Plinth Plate Size '     at xmin .SelectPlate ymax +1 call |!this.PlinthPlatePick()| width 13
+path right
+text   .PlatesizeZ 'Plate Thickness (mm)......' at xmax+4 call |!this.setCustomPlateSizeZ()| width 6 is REAL format !!integerFmt
+exit
+path down
+frame .frame3 'Options' 
+text   .SupportCode 'Support Code' at xmin .idSteel at ymin call || width 15 is string
+text   .PlatesizeX 'Plate Size (mm).........X' at xmax .SupportCode +1.25 at ymin call |!this.setCustomPlateSizeX()| width 6 is REAL format !!integerFmt
+path right 
+text   .PlatesizeY 'Y' at xmax .PlatesizeX +2 at ymin call |!this.setCustomPlateSizeY()| width 6 is REAL format !!integerFmt
+path down
+text   .steelsize 'Steel Size....................' at xmin .PlatesizeX at ymax +.5 call || width 17 is string
+exit
+path down 
+frame .frame4 'Bolt Hole Details' 
+
+    rgroup .BoltsRadio '' frame horizontal at xmin
+      add tag 'With'       select 'With'       call |!this.ActivateBolts()|
+      add tag 'Without'    select 'Without'    call |!this.DeactivateBolts()|
+    exit 
+    path down
+    option .BoltDiameter   'Bolt Diam'     at xmin .BoltsRadio call |!this.SetHoleSize()| width 5
+    path right
+    text   .BoltHoleDiam 'Hole Diam' at xmax .BoltDiameter +1.25 at ymin call || width 5 is REAL format !!integerFmt
+    text   .BoltCentreX 'Bolt Centre X' at xmax .BoltHoleDiam +5 at ymin call || width 4 is REAL format !!integerFmt
+    text   .BoltCentreY 'Y' at xmax .BoltCentreX +2 at ymin call || width 5 is REAL format !!integerFmt
+    para   .AdjustBoltCentre  at  xmin .BoltCentreX at ymax -2.25  text 'Adjust Bolt Centre...................'
+    button .ModifyBoltCentreButton 'Modify' at xmax .AdjustBoltCentre ymin.AdjustBoltCentre call |!this.ModifyBoltCentre()|
+exit
+
+
+frame .frame5 'Create / Delete' height 2 
+button .apply 'Apply' call |!this.apply()|
+button .Delete 'Delete Base Plate' at xmax +1 ymin .apply  call |!this.delete()|
+button .Dismiss 'Dismiss' at xmax +33.25 ymin .Delete call |!this.dismiss()|
+
+----------------------------------------------------------------------------------------------
+define method .applyidSteel()
+
+  aid clear all 
+  prompt off
+  prompt load escape |Select Gensec|
+  id gensec@
+  !SupportTest = name of SUPPO
+  handle(2,111) 
+    !!alert.warning('Picked GENSEC not owned by SUPPO, please select again')
+    return
+  endhandle
+  !this.SteelJus = jus
+  !this.SteelAngle = bangle
+  !this.SupportCode.val = ''
+  !this.gensecDbref = !!ce
+  !this.Material.val = !!ce.matref.name
+    handle (61,578)  
+      !CEMatref = !!ce.matref.name
+      !!alert.warning('Picked GENSEC matref not in list of allowable materials. Modify setup file.')
+      return
+    elsehandle(2,754) $* picked item has MATREF unset
+      !!alert.warning('Picked GENSEC has MATREF unset, defaulting to /CARBON/STEEL')   
+      !this.Material.val = '/CARBON/STEEL'
+    endhandle
+    
+  var !EndatuCollection collect all ENDATU for $!this.gensecDbref
+  if !EndatuCollection.size().neq(0) then
+     !ans = !!alert.confirm('GENSEC ($!this.gensecDbref) contains ENDATU these must be deleted before continuing.
+OK to DELETE ENDATU?')
+    if !ans.eq('YES') then
+      do !LOOP INDEX !EndatuCollection
+        $!EndatuCollection[$!LOOP] 
+        DELETE ENDATU 
+      enddo 
+      !!ce = !this.gensecDbref
+    else 
+      !!alert.message('Baseplate creation abondoned')
+      return
+      
+    endif
+  endif
+            
+  !this.GenStart = poss wrt /*  
+  !this.GenEnd = pose wrt /*
+  !this.FrmwNam = !!ce.owner.name
+  !this.StruNam = !!ce.owner.owner.name
+  !this.SctnNam = !!ce.name
+  
+  if !this.FrmwNam.dbref().name.substring(1,1).eq('=') then
+    !!alert.warning('Please name FRMW correctly, 
+Plate creation abondoned')
+    return
+  endif
+  
+  !SupportName = !!ce.owner.owner.owner.name
+  !this.SteelName.val = '$!SupportName'
+  !steelspec = !!ce.spref.nam.after('/')
+  !this.steelsize.val = '$!steelspec'
+  !gensecGtype = GTYPE
+  !this.sctntype = !!ce.spref.catref.gtype
+  if !gensecGtype.neq(!this.sctntype) then
+    !ans = !!alert.confirm('GTYPE of GENSEC ($!gensecGtype$n) does not match the GTYPE of Spec ($!this.sctntype$n).
+OK to correct this?')
+    if !ans.eq('YES') then
+      !!ce.gtype = !this.sctntype
+    endif
+  endif
+
+  if !this.sctntype.matchwild('*RTUB*')then
+    !this.width = !!ce.catref.para[1]
+    !this.depth = !!ce.catref.para[2]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+    
+ ------------------------------
+ --Extracting Steel Dimesnions
+ ------------------------------
+  
+  --elseif !this.sctntype.matchwild('*ANG*')then
+  elseif !this.sctntype eq 'ANG' or !this.sctntype eq 'ANGL' then
+    !this.width = !!ce.catref.para[1]
+    !this.depth = !!ce.catref.para[2]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*PFI*')then
+    !this.width = !!ce.catref.para[2]
+    !this.depth = !!ce.catref.para[1] 
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*DPFI*')then
+    !this.width = !!ce.despa[2]
+    !this.depth =  !!ce.despa[1]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*TFC*')then
+    !this.width = !!ce.catref.para[1]
+    !this.depth =  !!ce.catref.para[2]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*TWT*')then
+    !this.width = !!ce.catref.para[2]
+    !this.depth = !!ce.catref.para[1]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*DBXG*')then
+    !this.width = !!ce.despa[2]
+    !this.depth = !!ce.despa[1]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*IPGI*')then
+    !this.width = !!ce.despa[2]
+    !this.depth = !!ce.despa[1]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*PFT*')then
+    !this.width = !!ce.catref.para[1]
+    !this.depth = !!ce.catref.para[2]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*PFC*')then
+    !this.width = !!ce.catref.para[2]
+    !this.depth = !!ce.catref.para[1]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  elseif !this.sctntype .matchwild('*TFWT*')then
+    !this.width = !!ce.catref.para[1]
+    !this.depth = !!ce.catref.para[2]
+    !this.steelsize.val = '$!steelspec'
+    !this.steelsize.background = 'lightgrey'
+
+  else
+    !!alert.message('Please enter supporting steelwidth and thickness manually')
+  endif
+
+
+ ----------------------------------------------------------------------------------------------
+ --Gensec Orientation
+  ----------------------------------------------------------------------------------------------
+  
+  var !SteelOri  ori wrt stru 
+  !this.SteelOri = !SteelOri
+  !SteelPosStartEast = !!ce.poss.east
+  !SteelPosStartNorth = !!ce.poss.north
+  !SteelPosStartUp = !!ce.poss.up
+  !SteelPosEndEast = !!ce.pose.east
+  !SteelPosEndNorth = !!ce.pose.north
+  !SteelPosEndUp = !!ce.pose.up
+  
+  !EastDelta = !SteelPosStartEast - !SteelPosEndEast
+  !NorthDelta = !SteelPosStartNorth  - !SteelPosEndNorth
+  !UpDelta = !SteelPosStartUp - !SteelPosEndUp
+  
+  AID TEXT NUMBER 1 |Start| AT $!this.GenStart
+  AID TEXT NUMBER 1 |End| AT $!this.GenEnd
+
+  !this.apply.active = F
+  !this.PlatesizeX.active = F
+  !this.PlatesizeY.active = F
+  !this.steelsize.active = F
+  !this.Platelocation.active = F
+  !this.Platelocation.val = 1
+  !this.SelectPlate.val = 1
+  !this.SelectPlate.active = T
+  !this.idsteel.background = 24
+  !this.Material.active = T
+  
+  !this.HeadingBasePlate.visible = true
+  !this.HeadingCapPlate.visible = false
+  !this.HeadingPlinthPlate.visible = false
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+
+define method .fixing()
+
+!GensecName = !!ce
+!FixingCount = !!collectallfor('FIXING','',$!GensecName)
+if !!collectallfor('FIXING','',CE).size().geq(1) then
+  do !x values !FixingCount 
+
+     !FixingPos = !x.pos.wrt(worl)
+     --q var !FixingPos !this.originalPosition
+     If !this.originalPosition.distance(!FixingPos).eq(0) then
+       --Move by Fixing to Gensec Poss/Pose location 
+       $!x at $!this.NewPos 
+     endif
+  enddo
+endif
+!!ce = !GensecName
+endmethod
+  
+ 
+----------------------------------------------------------------------------------------------
+-- Base Plate Size Calculation
+----------------------------------------------------------------------------------------------
+
+define method .BasePlate()
+
+
+if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Base Plate') then 
+  !this.PlateSizeX.active = F
+  !this.PlateSizeY.active = F
+  !this.plateThkness = 15
+  !this.platesizeZ.val =  !this.plateThkness
+  
+  !this.HeadingBasePlate.visible = true
+  !this.HeadingCapPlate.visible = false
+  !this.HeadingPlinthPlate.visible = false
+  
+  
+  $(
+  $p WIDTH = $!this.width
+  $p DEPTH = $!this.depth
+  if !this.width ge !this.depth then
+    -- 100 =  50 X 2 **************************************
+    !passedValue = !this.width + 50
+  else 
+    -- 100 =  50 X 2 **************************************
+    !passedValue = !this.depth + 50
+  endif
+
+  -- Step = increament amount (50mm)
+  !step = 50
+  --!start = 150
+  !start = 50
+  !numberInArray = 1000 / !step
+  !arrayOfValues = ARRAY()
+  !value = !start 
+  do !x from 1 to $!numberInArray
+  !arrayOfValues[!x] = !value
+    !value = !value + !step 
+  enddo
+  
+  do !x from 1 to 100
+    
+    if !passedValue.leq(!arrayOfValues[!x] + 20) then 
+      !this.PlateX = !arrayOfValues[!x]
+      !this.PlateY = !arrayOfValues[!x]
+      break
+    endif
+  enddo
+  
+  $)
+  
+----------------------------------------------------------------------------------------------
+-- NEW Base Plate Size Calculation For ACE ONLY 
+----------------------------------------------------------------------------------------------
+
+
+if !this.steelsize.val.eq('EU-L50x50x6')then 
+  !this.PlateX = 110
+  !this.PlateY = 110
+  
+elseif !this.steelsize.val.eq('EU-L60x60x8')then 
+  !this.PlateX = 110
+  !this.PlateY = 110 
+  
+elseif !this.steelsize.val.eq('EU-L80x80x10')then 
+  !this.PlateX = 130
+  !this.PlateY = 130
+  
+elseif !this.steelsize.val.eq('EU-SHS80x80x6.3')then 
+  !this.PlateX = 130
+  !this.PlateY = 130
+  
+-- Check this ******************************************************
+elseif !this.steelsize.val.eq('EU-UPN100')then 
+  !this.PlateX = 150
+  !this.PlateY = 100
+  
+elseif !this.steelsize.val.eq('EU-L100x100x12')then 
+  !this.PlateX = 150
+  !this.PlateY = 150
+  
+elseif !this.steelsize.val.eq('EU-L100x100x12')then 
+  !this.PlateX = 150
+  !this.PlateY = 150 
+  
+elseif !this.steelsize.val.eq('EU-SHS100x100x6.3')then 
+  !this.PlateX = 150
+  !this.PlateY = 150 
+  
+elseif !this.steelsize.val.eq('EU-HE100A')then 
+  !this.PlateX = 150
+  !this.PlateY = 150 
+  
+elseif !this.steelsize.val.eq('EU-HE140A')then 
+  !this.PlateX = 190
+  !this.PlateY = 190
+  
+elseif !this.steelsize.val.eq('EU-SHS140x140x6.3')then 
+  !this.PlateX = 190
+  !this.PlateY = 190
+  
+elseif !this.steelsize.val.eq('EU-UPN160')then 
+  !this.PlateX = 210
+  !this.PlateY = 120
+  
+elseif !this.steelsize.val.eq('EU-SHS160x160x8')then 
+  !this.PlateX = 210
+  !this.PlateY = 210
+  
+elseif !this.steelsize.val.eq('EU-HE160A')then 
+  !this.PlateX = 210
+  !this.PlateY = 210
+  
+elseif !this.steelsize.val.eq('EU-UPN200')then 
+  !this.PlateX = 130
+  !this.PlateY = 250
+  
+elseif !this.steelsize.val.eq('EU-SHS200x200x10')then 
+  !this.PlateX = 250
+  !this.PlateY = 250
+  
+elseif !this.steelsize.val.eq('EU-HE200A')then 
+  !this.PlateX = 250
+  !this.PlateY = 250
+
+elseif !this.steelsize.val.eq('EU-UPN220')then 
+  !this.PlateX = 270
+  !this.PlateY = 130
+
+elseif !this.steelsize.val.eq('EU-SHS250x250x12.5')then 
+  !this.PlateX = 300
+  !this.PlateY = 300
+
+elseif !this.steelsize.val.eq('EU-IPE240')then 
+  !this.PlateX = 300
+  !this.PlateY = 170
+  
+elseif !this.steelsize.val.eq('EU-UPN300')then 
+  !this.PlateX = 350
+  !this.PlateY = 150
+else
+   !!alert.message('GENSEC not covered by standards , Baseplate creation abondoned')
+endif
+
+
+ !this.PlatesizeX.val = !this.PlateX
+ !this.PlatesizeY.val = !this.PlateY
+
+
+
+elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Cap Plate')  then 
+  ----------------------------------------------------------------------------------------------
+  -- Cap Plate Size Calculation
+  ----------------------------------------------------------------------------------------------
+  !this.PlateSizeX.active = F
+  !this.PlateSizeY.active = F
+  
+  !this.plateThkness = 6
+  !this.platesizeZ.val =  !this.plateThkness
+  
+  !this.HeadingBasePlate.visible = false
+  !this.HeadingCapPlate.visible = true
+  !this.HeadingPlinthPlate.visible = false
+
+  !this.sctntype = gtype
+
+      if !this.sctntype.matchwild('*RTUB*')then
+        !this.PlateX = !this.width - 6
+        !this.PlateY = !this.depth - 6
+
+        !this.PlatesizeX.val = !this.width - 6
+        !this.PlatesizeY.val = !this.depth - 6
+      else 
+        !!alert.warning('You must be on a closed section for Cap Plate option')
+        !this.clearFormValues()
+        return
+      endif
+
+elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate')  then 
+  !this.PlateSizeX.active = T
+  !this.PlateSizeY.active = T
+  !this.PlateSizeZ.active = T
+  !this.platesizeX.background = 98
+  !this.platesizeY.background = 98
+  !this.platesizeZ.background = 98
+  
+  !this.PlateSizeX.val = 0
+  !this.PlateSizeY.val = 0 
+  !this.PlateSizeZ.val = 0 
+  
+  !this.HeadingBasePlate.visible = true
+  !this.HeadingCapPlate.visible = false
+  !this.HeadingPlinthPlate.visible = false
+  
+  elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate')  then 
+    --********************************
+    !this.PlateSizeX.active = F
+    !this.PlateSizeY.active = F
+    !this.PlateSizeZ.active = F
+    --********************************
+    !this.platesizeX.background = 98
+    !this.platesizeY.background = 98
+    !this.platesizeZ.background = 98
+    
+    !this.PlateSizeX.val = 0
+    !this.PlateSizeY.val = 0 
+    !this.PlinthPlatePopulate()
+    !this.SelectPlinthPlate.active = T
+    
+    !this.HeadingBasePlate.visible = false
+    !this.HeadingCapPlate.visible = false
+    !this.HeadingPlinthPlate.visible = true
+    
+endif
+
+  !this.apply.active = F
+  !this.steelsize.active = F
+  !this.SelectPlate.active = F
+  if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate') or !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') then 
+    !this.Platelocation.active = F
+  else
+    !this.Platelocation.active = T
+  endif
+  !this.PlateCode()
+
+endmethod
+
+ ----------------------------------------------------------------------------------------------
+ define method .PlinthPlatePopulate()
+ 
+   !SelectPlinthPlate = ARRAY()
+   !SelectPlinthPlate.append('Select Size')
+   !SelectPlinthPlate.append('300 x 300 x 16 THK')
+   !SelectPlinthPlate.append('450 x 450 x 20 THK')
+   !SelectPlinthPlate.append('600 x 600 x 30 THK')
+   !this.SelectPlinthPlate.dtext=!SelectPlinthPlate
+   
+ endmethod
+ 
+ 
+
+ ----------------------------------------------------------------------------------------------
+ define method .PlinthPlatePick()
+ 
+  !this.BoltHoleDiam.active = T
+  !this.BoltDiameter.active = T
+  !this.BoltsRadio.val = 1
+  !this.PlatesizeZ.active = T
+  !this.BoltCentreX.active = T
+  !this.BoltCentreY.active = T
+  !this.Platelocation.active = T
+  if !this.SelectPlinthPlate.val.eq(1) then
+    !!alert.message('Please pick plinth size')
+     !this.PlateSizeX.val = 0
+     !this.PlateSizeY.val = 0
+    return
+    
+  elseif !this.SelectPlinthPlate.val.eq(2) then
+    --Plate 300sq thk 16 , Bolt Centre 210
+    !this.BoltCentreX.val = 210
+    !this.BoltCentreY.val = 210
+    !this.PlatesizeZ.val = 16
+    !this.BoltDiameter.VAL = 8
+    !this.BoltHoleDiam.val = 24 
+    
+  elseif !this.SelectPlinthPlate.val.eq(3) then
+    --Plate 450sq thk 20 , Bolt Centre 350
+    !this.BoltCentreX.val = 350
+    !this.BoltCentreY.val = 350
+    !this.PlatesizeZ.val  = 20
+    !this.BoltDiameter.VAL = 8
+    !this.BoltHoleDiam.val = 24
+  elseif !this.SelectPlinthPlate.val.eq(4) then
+    --Plate 600sq thk 30 , Bolt Centre 450
+    !this.BoltCentreX.val = 450
+    !this.BoltCentreY.val = 450
+    !this.PlatesizeZ.val  = 30
+    !this.BoltDiameter.VAL = 13
+    !this.BoltHoleDiam.val = 36
+  endif
+  !this.PlateSizeX.val =  !this.SelectPlinthPlate.dtext[!this.SelectPlinthPlate.val].split()[1].real()
+  !this.PlateSizeY.val =  !this.SelectPlinthPlate.dtext[!this.SelectPlinthPlate.val].split()[3].real()
+  !this.plateX = !this.PlateSizeX.val
+  !this.plateY = !this.PlateSizeX.val
+  
+  !this.PlateCode()
+   
+  !this.plateThkness = !this.PlatesizeZ.val
+ 
+
+ endmethod
+ 
+ 
+ 
+ 
+----------------------------------------------------------------------------------------------
+
+define method .PlateLoc()
+
+  pin 1 at poss 
+  pin 2 at pose 
+  pin1 dir to pin2 
+  pin2 dir to pin1 
+  pin1 off
+  pin2 off
+  
+  !aidText = !this.SelectPlate.dtext[!this.SelectPlate.val]
+  !StruName = !this.StruNam
+  if !this.Platelocation.dtext[!this.Platelocation.val].eq('Gensec Start') then
+    aid clear text all    
+    var !directionStart drnstart wrt stru
+    !this.SteelDir = !directionStart
+    prec var 0 dp
+    aid text number 1 |$!aidText at start| AT $!this.GenStart
+    !originalPos = poss wrt/*
+    var !DirectionString pin1 dir wrt WORLD
+  elseif !this.Platelocation.dtext[!this.Platelocation.val].eq('Gensec End') then 
+    aid clear text all 
+    var !directionEnd drnend wrt stru
+    !this.SteelDir = !directionEnd
+    prec var 0 dp
+    aid text number 1 |$!aidText at end| AT $!this.GenEnd
+    !originalPos = pose wrt/*
+    var !DirectionString pin2 dir wrt WORLD
+    -- q var !DirectionString
+    --q pin2 dir
+    --q pin2 dir wrt WORLD
+    
+  endif
+  
+  !this.DirectionString = !DirectionString
+  
+  !DirectionObject =  OBJECT DIRECTION(!this.DirectionString)
+  if !this.DirectionString.split().size().eq(3) then 
+    !angle = !this.DirectionString.split()[2]
+  else
+    !angle = '90'
+  endif
+ 
+  if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') then
+    !this.plateThkness = !this.PlatesizeZ.val
+  endif
+  
+  !Distance = !this.PlatesizeZ.val / sine(!angle.real())
+  --!Distance = 20 / sine(!angle.real())
+
+ 
+  !this.NewPos = !originalPos.offset(!DirectionObject,!Distance)
+  
+  if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') or !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate') then
+    !this.PlatesizeX.active = T
+    !this.PlatesizeY.active = T
+  else 
+    !this.PlatesizeX.active = F
+    !this.PlatesizeY.active = F
+  endif
+
+ 
+ 
+ 
+  !this.steelsize.active = F
+  !this.Platelocation.active = F
+  !this.SelectPlate.active = F
+  
+  !this.apply.active = T
+  
+  
+endmethod
+----------------------------------------------------------------------------------------------
+
+define method .apply()
+
+--q var !this.NewPos
+--q var !!ce.poss.wrt(worl)
+--q var !!ce.poss.wrt(worl).distance(!this.NewPos)
+
+  !twoPlates = FALSE
+  
+  if !this.Platelocation.dtext[!this.Platelocation.val].eq('Gensec Start') then
+  !PlateOri = !!ce.Drnstart.opposite()
+  !this.originalPosition = !!ce.poss.wrt(worl)
+    if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Base Plate') then
+                
+        !this.plateThkness = 15
+        --!position = !this.GenStart
+        !PlateRad = 10
+        --Move the GENSEC start point
+         !!ce.poss = !this.NewPos
+      
+    elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Cap Plate') then 
+    
+        !this.plateThkness = 6
+        !position = !this.GenStart
+        !PlateRad = 5
+    elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') then
+        
+        !this.plateThkness = !this.PlatesizeZ.val
+        --!position = !this.GenStart
+        !PlateRad = 10
+        --Move the GENSEC start point
+          !!ce.poss = !this.NewPos
+    elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate') then
+        
+        !this.plateThkness = !this.PlatesizeZ.val
+        --*******************************************************************************************************************************
+        --Q VAR !this.plateThkness
+         --*******************************************************************************************************************************
+        --!position = !this.GenStart
+        !PlateRad = 0
+        --Move the GENSEC start point
+          !!ce.poss = !this.NewPos
+    endif
+    !Gensec = !!ce
+    --var !PanelPos pos ppline na start of $!Gensec
+    var !PanelPos pos ppline CMID start of $!Gensec
+
+    
+  elseif !this.Platelocation.dtext[!this.Platelocation.val].eq('Gensec End') then 
+   !PlateOri = !!ce.DrnEnd.opposite()
+   !this.originalPosition = !!ce.pose.wrt(worl)
+    if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Base Plate') then
+    
+        !this.plateThkness = 15
+        --!position = !this.GenEnd
+        !PlateRad = 10
+        --Move the GENSEC end point
+          !!ce.pose = !this.NewPos
+          
+      
+    elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Cap Plate') then 
+    
+        !this.plateThkness = 6
+        !position = !this.GenEnd
+        !PlateRad = 5
+    elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') then
+    
+        !this.plateThkness = !this.PlatesizeZ.val
+        --!position = !this.GenEnd
+        !PlateRad = 10
+        --Move the GENSEC end point
+          !!ce.pose = !this.NewPos
+    elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate') then
+    
+        !this.plateThkness = !this.PlatesizeZ.val
+        --!position = !this.GenEnd
+        !PlateRad = 0
+        --Move the GENSEC end point
+          !!ce.pose = !this.NewPos
+    endif
+    !this.fixing()
+    !Gensec = !!ce
+    --var !PanelPos pos ppline na end of $!Gensec    
+    var !PanelPos pos ppline CMID end of $!Gensec
+
+  endif
+
+
+  
+  do !loop
+    --!this.itemName =  !this.FrmwNam & '/' & !this.SelectPlate.dtext[!this.SelectPlate.val].replace(' ','') & !loop
+	!this.itemName =  !this.SctnNam & '/'  & !this.SelectPlate.dtext[!this.SelectPlate.val].replace(' ','') & '_' & !this.plateLocation.selection().split()[2].trim()
+    !!ce = !this.itemName.dbref()
+      handle (2,109)
+        break
+      elsehandle none
+        --carry on as that name is taken
+      endhandle
+  enddo
+      
+      
+  !this.PanelBuild(!PlateRad)   
+      
+
+  !NewPos = !this.NewPos
+   
+  
+  if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Base Plate') or !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') or !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate')then
+
+    !oriCommand = 'ORI Z IS ' & !PlateOri
+    $!oriCommand
+    --!NewPos = !this.NewPos 
+    --POS AT $!NewPos
+    POS AT $!PanelPos
+  elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Cap Plate') then
+
+    !oriCommand = 'ORI Z is ' & !PlateOri
+    -- $p $!oriCommand
+    $!oriCommand
+    --pos at $!position
+    POS AT $!PanelPos
+  endif
+  
+
+
+
+
+  !!ce = !this.gensecDbref 
+  AID CLEAR ALL
+  UNENHANCE ALL
+  PIN1 OFF 
+  PIN2 OFF
+  
+  !this.apply.active = F
+  !this.clearFormValues()
+  if !this.BoltsRadio.val.eq(1) then
+    !this.ModifyBoltCentreButton.active = T
+  endif
+
+endmethod
+----------------------------------------------------------------------------------------------
+define method .setCustomPlateSizeX()
+  !this.plateX = !this.PlateSizeX.val
+  !this.platesizeX.background = 297
+  !this.PlateCode()
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .setCustomPlateSizeY()
+  !this.plateY = !this.PlateSizeY.val
+  !this.platesizeY.background = 297
+  !this.PlateCode()  
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .setCustomPlateSizeZ()
+  !this.platesizeZ.background = 297
+  !this.Platelocation.active = T
+endmethod
+  
+----------------------------------------------------------------------------------------------
+
+
+define method .SelectPlateInit()
+  !SelectPlateArray[1]=' -- '
+  !SelectPlateArray[2]='Base Plate'
+  !SelectPlateArray[3]='Cap Plate'
+  !SelectPlateArray[4]='Custom Plate'
+  !SelectPlateArray[5]='Plinth Plate'
+  !this.SelectPlate.dtext=!SelectPlateArray
+  !this.plateThkness = 0
+
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .PlatelocationInit()
+
+!PlatelocationArray[1]='--'
+!PlatelocationArray[2]='Gensec Start'
+!PlatelocationArray[3]='Gensec End'
+
+!this.Platelocation.dtext=!PlatelocationArray
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+
+define method .MaterialInit()
+
+!this.shortMaterialCode[1] = '--'
+!this.shortMaterialCode[2] = 'CS'
+!this.shortMaterialCode[3] = '355'
+!this.shortMaterialCode[4] = 'SS'
+!this.shortMaterialCode[5] = 'SS'
+!this.shortMaterialCode[6] = 'DS'
+!this.shortMaterialCode[7] = 'SX'
+!this.shortMaterialCode[8] = 'LT'
+
+
+!MaterialArray[1]='--'
+!MaterialArray[2]='/CARBON/STEEL'
+!MaterialArray[3]='/GR355'
+!MaterialArray[4]='/STAINELESS/STEEL'
+!MaterialArray[5]='/SS316L'
+!MaterialArray[6]='/DUPLEX'
+!MaterialArray[7]='/SUPER/DUPLEX'
+!MaterialArray[8]='/LTCS'
+
+!this.Material.dtext=!MaterialArray
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+
+
+
+
+define method .SupportInit()
+  aid clear all 
+  !this.SelectPlateInit()
+  !this.PlatelocationInit()
+  !this.MaterialInit()
+
+  !this.apply.active = F
+  !this.PlatesizeX.active = F
+  !this.PlatesizeY.active = F
+  !this.steelsize.active = F
+  !this.SelectPlate.active = F
+  !this.Platelocation.active = F
+
+  !this.idsteel.background = 98
+  !this.Material.active = F
+  !this.SupportCode.active = F
+  !this.SteelName.active = F
+  !this.BoltsRadio.val = 2
+  !this.ModifyBoltCentreButton.active = F
+  !this.HeadingBasePlate.visible = true
+  
+  !boltDiamArray = ARRAY()
+  !boltDiamArray.append('--')
+  !boltDiamArray.append('8')
+  !boltDiamArray.append('10')
+  !boltDiamArray.append('12')
+  !boltDiamArray.append('14')
+  !boltDiamArray.append('16')
+  !boltDiamArray.append('18')
+  !boltDiamArray.append('20')
+  !boltDiamArray.append('22')
+  !boltDiamArray.append('24')
+  !boltDiamArray.append('26')
+  !boltDiamArray.append('28')
+  !boltDiamArray.append('30')
+  !this.BoltDiameter.dtext = !boltDiamArray
+  !this.SelectPlinthPlate.active = F
+  !this.PlatesizeZ.active = F
+  !this.BoltSizeArray = !boltDiamArray
+  !this.DeactivateBolts()
+
+endmethod
+
+
+----------------------------------------------------------------------------------------------
+define method .Dismiss()
+  kill !!KBRBasePlates
+endmethod
+
+
+----------------------------------------------------------------------------------------------
+define method .delete()
+
+!ans = !!alert.confirm('About to delete base plate and restore GENSEC to original length.
+OK to continue?')
+if !ans.eq('NO') then
+  RETURN
+endif
+
+aid clear all 
+prompt off
+prompt load escape |Select Base Plate for Deletion
+ESC to canel|
+id pane@
+!DeletePane = !!ce
+if !DeletePane.name.matchwild('*BasePlate*') then
+   --continue with deletion
+   !deleteType = |Base Plate|
+elseif !DeletePane.name.matchwild('*CustomPlate*') then
+  --continue with deletion
+   !deleteType = |Custom Plate|
+elseif !DeletePane.name.matchwild('*PlinthPlate*') then
+  --continue with deletion
+   !deleteType = |Plinth Plate|
+elseif !DeletePane.name.matchwild('*CapPlate*') then
+  --continue with deletion
+   !deleteType = |Cap Plate|
+else
+  !!alert.message('Not an appropiate 
+base plate for deletion...')
+  RETURN
+endif
+enhance ce col red
+
+var !PaneHei hei of ploo 1
+!this.plateThkness = !PaneHei.real()
+!this.PlatesizeZ.val = !this.plateThkness
+!ans = !!alert.confirm('OK to Delete $!deleteType')
+if !ans.eq('NO') then
+  UNENHANCE CE
+  RETURN
+endif
+
+if !deleteType.eq(|Cap Plate|) then
+  golabel /DelelteItem
+endif
+
+prompt load escape |Select Gensec for Adjustment|
+id gensec@
+!this.gensecDbref = !!ce
+!this.GenStart = poss wrt /*
+!this.GenEnd = pose wrt /*
+
+AID TEXT NUMBER 1 |Start| AT $!this.GenStart
+AID TEXT NUMBER 1 |End| AT $!this.GenEnd
+
+if !deletePane.pos.distance(!this.GenStart).lt(!deletePane.pos.distance(!this.GenEnd)) then
+  --modify gensec start
+  !originalPos = !this.GenStart
+  !this.Platelocation.val = 2
+else
+  -- modify gensec end
+  !originalPos = !this.GenEnd
+  !this.Platelocation.val = 3
+endif
+
+
+!this.PlateLoc()
+
+
+
+!DirectionObject =  OBJECT DIRECTION(!this.DirectionString)
+  if !this.DirectionString.split().size().eq(3) then 
+    !angle = !this.DirectionString.split()[2]
+  else
+    !angle = '90'
+  endif
+!pltthk = -$!this.plateThkness
+!Distance = $!pltthk / sine(!angle.real())
+
+if !deleteType.eq(|Cap Plate|) then
+  -- setting Distance to 0 as we do not need to adjust the GENSEC length
+  !Distance = 0
+endif
+
+
+--!Distance = -20 / sine(!angle.real()) 
+!this.NewPos = !originalPos.offset(!DirectionObject,!Distance)
+
+
+if !this.Platelocation.dtext[!this.Platelocation.val].eq('Gensec Start') then 
+  !!ce.poss = !this.NewPos
+   
+   !pltthk = -$!this.plateThkness
+   !Distance = $!pltthk / sine(!angle.real())
+
+
+   --!Distance = -20 / sine(!angle.real())
+elseif !this.Platelocation.dtext[!this.Platelocation.val].eq('Gensec End') then 
+  !!ce.pose = !this.NewPos
+endif
+ 
+label /DelelteItem
+!!ce = !DeletePane
+DELETE PANE
+AID  CLEAR ALL
+UNENHANCE ALL
+PIN1 OFF
+PIN2 OFF
+!this.PlatesizeZ.val = 0
+
+endmethod
+
+
+----------------------------------------------------------------------------------------------
+define method .PanelBuild(!PlateRad is REAL)  
+
+  NEW PANEL $!this.itemName
+  NEW PLOOP
+  HEIG $!this.plateThkness
+  NEW PAVERT
+  POS E ( $!this.PlateX / 2 ) N ( $!this.PlateY / 2 ) U 0mm 
+  FRAD $!PlateRad
+  NEW PAVERT
+  POS E ( $!this.PlateX / 2 ) S ( $!this.PlateY / 2 ) U 0mm 
+  FRAD $!PlateRad
+  NEW PAVERT
+  POS W ( $!this.PlateX / 2 ) S ( $!this.PlateY / 2) U 0mm 
+  FRAD $!PlateRad
+  NEW PAVERT
+  POS W ( $!this.PlateX / 2 ) N ( $!this.PlateY / 2 ) U 0mm
+  FRAD $!PlateRad
+  PANE
+  !!ce.matref = !this.Material.dtext[!this.Material.val].dbref()
+  handle(2,109)
+    --Material not avaliable 
+    !!alert.warning('Picked Material Code not found in current project/MDB. Modify setup file.
+MATREF attribute will NOT be set.')
+  endhandle
+  
+  !!ce.Desc = !this.SupportCode.val
+  
+  if !this.boltsRadio.val.eq(1) then
+    !this.createNcyli()
+  endif
+
+  
+endmethod
+
+
+
+----------------------------------------------------------------------------------------------
+define method .DeactivateBolts()
+
+!this.BoltDiameter.active = F
+!this.BoltHoleDiam.active = F
+!this.BoltCentreX.active = F
+!this.BoltCentreY.active = F
+
+!this.BoltDiameter.val = 1
+!this.BoltHoleDiam.val = 0
+!this.BoltCentreX.val =  0
+!this.BoltCentreY.val =  0
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .activateBolts()
+
+!this.BoltDiameter.active = T
+!this.BoltHoleDiam.active = T
+!this.BoltCentreX.active = T
+!this.BoltCentreY.active = T
+
+
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .createNcyli()
+
+
+
+!command = |NEW NCYLI DIAM | &  !this.BoltHoleDiam.val & |HEI | & !this.plateThkness
+!halfX = !this.BoltCentreX.val / 2
+!halfY = !this.BoltCentreY.val / 2
+!halfThk = !this.plateThkness / 2
+
+$!command
+POS E $!halfX N $!halfY U $!halfThk
+
+$!command
+POS W $!halfX N $!halfY U $!halfThk
+
+$!command
+POS E $!halfX S $!halfY U $!halfThk
+
+$!command
+POS W $!halfX S $!halfY U $!halfThk
+
+PANE
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .SetHoleSize()
+
+if !this.boltDiameter.val.leq(12) then
+  !this.BoltHoleDiam.val = !this.BoltSizeArray[!this.boltDiameter.val].real() + 4mm
+else
+  !this.BoltHoleDiam.val = !this.BoltSizeArray[!this.boltDiameter.val].real() + 6mm
+endif
+
+endmethod
+
+
+----------------------------------------------------------------------------------------------
+define method .clearFormValues()
+
+  !this.idsteel.background = 98
+  !this.SteelName.val = ''
+  !this.SteelName.active = F
+  !this.Material.val = 1
+  !this.Material.active = F
+  !this.SupportCode.val = ''
+  !this.steelsize.val = ''
+  
+  !this.SupportCode.active = F
+  !this.SelectPlate.val = 1
+  !this.Platelocation.val = 1
+  !this.PlatesizeX.active = F
+  !this.PlatesizeY.active = F
+  !this.PlatesizeX.val = 0
+  !this.PlatesizeY.val = 0
+  !this.deactivatebolts()
+  !this.SelectPlinthPlate.val = 1
+  handle(61,620)
+  endhandle
+  !this.platesizeZ.val = 0
+  !this.SelectPlinthPlate.active = F
+  !this.platesizeZ.active = F
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .modifyBoltCentre()
+
+
+!!ce  = !this.itemName.dbref()
+
+!allNcyli = !!collectallfor('NCYLI','',ce)
+do !deleteItem values !allNcyli
+   !!ce = !deleteItem
+   DELETE NCYLI
+enddo
+
+!this.createNcyli()
+
+endmethod
+
+----------------------------------------------------------------------------------------------
+define method .PlateCode()
+
+if !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Custom Plate') or !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Base Plate') then 
+  !SupportCodetext =  'XF10-A-' & !this.PlatesizeX.val & '-' & !this.PlatesizeY.val & '-' &  !this.shortMaterialCode[!this.material.val]
+elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Cap Plate') then
+  !SupportCodetext =  'XF10-E-' & !this.PlatesizeX.val & '-' & !this.PlatesizeY.val & '-' &  !this.shortMaterialCode[!this.material.val]
+elseif !this.SelectPlate.dtext[!this.SelectPlate.val].eq('Plinth Plate') then
+  !SupportCodetext =  'XF10-B-' & !this.PlatesizeX.val & '-' & !this.PlatesizeY.val & '-' &  !this.shortMaterialCode[!this.material.val]
+  
+endif
+
+!this.SupportCode.val = !SupportCodetext
+
+endmethod
+----------------------------------------------------------------------------------------
+define method .UserGuide()
+  syscom |\\Lon99appsp00031\projcfg\SRO8\LMD\3D\PROJE3D\PMLLIB\KBRSUPPORTS\DOCS\KBRBaseplates.pdf &|
+endmethod
+
