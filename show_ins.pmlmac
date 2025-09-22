@@ -1,0 +1,63 @@
+--  **********************************************************************************************
+--  KBR IPR     : (c) COPYRIGHT 2010 TO CURRENT YEAR
+--  FILENAME    : Show_Ins.mac
+--  WRITTEN BY  : IAN GREGOR
+--  DATE        : 11 January 2021
+--  DESCRIPTION : Show Insulation On or Off depending on parameter passed
+--              :
+--              :
+--  **********************************************************************************************
+--  NOTES       : Only works on Pipes built with PDMS Piping Catalogues
+--              :
+--              :
+--  **********************************************************************************************
+--  REVISION    : 8.0.0
+--  REVISION BY : IAN GREGOR
+--  DATE        : 11 January 2021
+--  DESCRIPTION : First release at SRO8
+--  **********************************************************************************************
+
+    ------------------------------------------------------------------------
+    -- CHECK PARAMETER
+    var !option (upcase(|$1|))
+    if (|$!option| neq |ON| and |$!OPTION| neq |OFF|) then
+      !!alert.error(|Invalid Option, use ON or OFF|)
+      return
+    endif
+    var !option2 (upcase(|$2|))
+    -- CHECK TO SEE IF USER IS AT OR BELOW A PIPE
+    var !curelem name
+    pipe
+    handle (41,222)
+      equip
+      handle (41,222)
+        stru
+        handle (41,222)
+          !!alert.error(|Error - Not At Pipe, Equip Or Stru|)
+          return
+        endhandle
+      endhandle
+    endhandle
+    var !name name
+    remove ce
+    if (|$!option| eq |ON|) then
+      representation level pipe 6
+      --If user selects 'SOLID' display obstructin solid, otherwise 50%
+      if (|$!option2| eq |SOLID|) then
+         representation insulation ON
+         representation obstruction ON
+      else
+         representation insulation ON translucency 50
+         representation obstruction ON translucency 50
+      endif
+    else
+      representation level pipe 6
+      representation insulation OFF
+      representation obstruction OFF
+    endif
+    add ce
+    $!curelem
+    $p
+    $p INSU $!option for - $!name
+    return
+    ------------------------------------------------------------------------
