@@ -1,0 +1,1209 @@
+------------------------------------------------------------------------
+--
+-- File:                 CaesariiPCF.pmlfrm
+-- Type:              Form Definition
+-- Author:            Jevon Liu     (yongjiuliu@sina.cn)
+-- Created:          Wednesday, October 10, 2012
+-- Description:     Form
+-- Modification:	November 26, 2013 - Francois Salmin (fsalmin@verdon.be / verdon@verdon.be)
+--					Editing for compatibility with PDMS 12.1.SP2 + Patch21
+--					Upgrade with atta in pipe : arrive position is apos if previous element is atta
+--					Modify atta definition as support (up only) -  all atta will be considered as support
+------------------------------------------------------------------------
+$*Form definition
+setup form !!CaesariiPCF
+    path down
+    button .addce 'Add CE' 
+    list .list 'Element' columns MULTIPLE width 35 height 36
+    button .removeSelect 'Remove Selected'
+    path right
+    button .clearAll 'Clear All'
+    button .export 'Export' 
+    
+    member .items is ARRAY
+    member .boreFormat is format
+    member .positionFormat is format
+    member .angleFormat is format
+exit
+
+------------------------------------------------------------------------
+$*Constructure method
+define method .CaesariiPCF(   )
+    !this.formtitle = 'CAESAR II Interface(PCF)'
+    !heading = array()
+    !heading[1] = 'Name'
+    !heading[2] = 'Head Bore'
+    !heading[3] = 'Tail Bore'
+    !heading[4] = 'Temperature'
+    !heading[5] = 'Pressure'
+    !this.list.setheadings(!heading)
+    
+    !this.addce.callback = '!this.Addce()'
+    !this.removeSelect.callback = '!this.RemoveSelected()'
+    !this.clearAll.callback = '!this.ClearAll()'
+    !this.export.callback = '!this.Export()'
+    
+    $* format for bore
+    !boreFormat  = object format()
+    !boreFormat.dp = 6
+    !boreFormat.units = 'INCH'
+    $* format for position
+    !positionFormat = object format()
+    !positionFormat.dp = 6
+    !positionFormat.Dimension = 'L'
+    !positionFormat.units = 'MM'
+    $* format for angle
+    !angleFormat  = object format()
+    !angleFormat.dp = 0
+    !angleFormat.Dimension = 'L'
+    -- !angleFormat.units = 'degree'
+    -- !angleFormat.units = 'MM'
+	
+    !this.boreFormat = !boreFormat
+    !this.positionFormat = !positionFormat
+    !this.angleFormat = !angleFormat
+    
+endmethod
+
+------------------------------------------------------------------------
+define method .FillColoum(  ) 
+    !singleRow = array()        $* One row 
+    !row = array()                  $* 2D array
+    do !item values !this.items
+        !name = !item.name
+        !hBore = !item.hbore
+        !tBore = !item.tbore
+        !temperature = !item.temperature
+        !pressure = !item.pressure
+        !singleRow[1] = !name.string()
+        !singleRow[2] = !hBore.string()
+        !singleRow[3] = !tBore.string()
+        !singleRow[4] = !temperature.string()
+        !singleRow[5] = !pressure.string()
+        
+        !row.append(!singleRow)
+    enddo
+    
+    $* Set Rows
+    !this.list.setrows(!row)
+endmethod
+
+------------------------------------------------------------------------
+define method .Addce ( ) 
+    !collection = object collection()
+    !collection.addtype('BRAN')
+    !collection.scope(!!CE)
+    !results = !collection.results()
+    !this.items.AppendArray(!results)
+    !this.items.unique()
+    
+    $*Fill the list 
+    !this.FillColoum()
+endmethod
+
+------------------------------------------------------------------------
+define method .RemoveSelected(  ) 
+    !items = !this.list.Selection()
+    do !item values !items
+        !name = !item.split()[1]
+        !index = !this.items.FindFirst(!name.dbref())
+        !this.items.RemoveFrom(!index, 1)
+    enddo
+    
+    $*Fill the list 
+    !this.FillColoum()
+endmethod
+
+------------------------------------------------------------------------
+define method .ClearAll(  ) 
+    !this.items.clear()
+    !this.FillColoum()
+endmethod
+
+------------------------------------------------------------------------
+define method .Export(  ) 
+    !save = !!ce.fullname
+    $* Get items by selected
+    !selected = !this.list.Selection()
+    !folderName = '%pdmswk%\CaesarPCF\'
+    !folder = object file(!folderName)
+    if(!folder.exists() eq false)then
+        syscom 'MD %pdmswk%\CaesarPCF\'
+    endif
+    syscom 'del %pdmswk%\CaesarPCF\ /q'
+	do !j index !selected
+        !itemName = !selected[!j].split()[1]
+        $* Get item
+        !item = !itemName.dbref()
+        $* Create array to record data
+        !lines  = array()
+        $********************************************************************
+        $* Ok begin tranfor model to pcf file
+        $********************************************************************
+        --Heading
+        !lines.append('ISOGEN-FILES            ISOGEN.FLS   ')
+        !lines.append('UNITS-BORE              INCH         ')
+        !lines.append('UNITS-CO-ORDS           MM           ')
+        !lines.append('UNITS-BOLT-LENGTH       MM           ')
+        !lines.append('UNITS-BOLT-DIA          INCH         ')
+        !lines.append('UNITS-WEIGHT            KGS          ')
+        !lines.append('PIPELINE-REFERENCE      $!itemName   ')
+        
+        --Component data
+        !collection  = object collection()
+        !collection.addtype('BRAN MEM')
+        !collection.scope(!item)
+        !items = !collection.results()
+        -- OK begin read Component data
+        !find = !items.FindFirst(!item)
+        if(!find.set())then
+            !items.removefrom(!find, 1)
+        endif
+         
+        do !k index !items
+            --skip if(!items[!k].type eq 'BRAN')  $* Skip  if current item is a branch
+            !component = !items[!k]
+            !type = !component.type
+            !result = !this.$!<type>(!items, !k)  $* Call get data methods 
+            if(!result.empty())then   $* If not fit trans component to a MISC-COMPONENT
+                $*Skip if have one point only 
+                !test  = !component.ppbore[2]
+                skip if(!test.unset())
+                !result = !this.PCOM(!items, !k) $* Call PCOM method
+            else
+                !lines.AppendArray(!result) $*Append data to array
+             endif   
+        enddo
+		$********************************************************************
+        $*Create file and writing data
+        !pcfFileName = !folderName + !item.name.replace('/','').replace('=','') + '.pcf'
+        !file = object file(!pcfFileName)
+        !file.WriteFile('OVERWRITE', !lines) 
+    enddo    
+    $!save
+	
+endmethod
+
+------------------------------------------------------------------------
+define method .getMaterial(!item is dbref) is array 
+    !result = array()
+    !tempArray = !item.spref.name.split('/')
+    !itemCode = '    ITEM-CODE   ' + !tempArray.RemoveLast()
+    !result.append(!itemCode)
+    !description = '    ITEM-DESCRIPTION   ' + !item.dtxr
+    !result.append(!description)
+    return !result
+endmethod
+------------------------------------------------------------------------
+define method .ELBO(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('ELBOW')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $*CENTRE-POINT 
+     !centrePosition = !component.position.wrt(WORLD)
+     !centrePoint = !centrePosition.east.string(!this.positionFormat) + '  ' + !centrePosition.north.string(!this.positionFormat) + '  ' + !centrePosition.up.string(!this.positionFormat) 
+     !lines.append('    CENTRE-POINT     $!centrePoint ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     $* ANGLE
+     !angle = !component.angle * 100
+     !strAngle = before(!angle.string(),'degree')
+	 -- !strAngle = !angle.string(!this.angleFormat)
+     !lines.append('    ANGLE  $!strAngle')
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .BEND(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('BEND')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $*CENTRE-POINT 
+     !centrePosition = !component.position.wrt(WORLD)
+     !centrePoint = !centrePosition.east.string(!this.positionFormat) + '  ' + !centrePosition.north.string(!this.positionFormat) + '  ' + !centrePosition.up.string(!this.positionFormat) 
+     !lines.append('    CENTRE-POINT     $!centrePoint ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     $* ANGLE
+     !angle = !component.angle * 100
+     !strAngle = !angle.string(!this.angleFormat)
+     !lines.append('    ANGLE  $!strAngle')
+     $* BEND-RADIUS
+     !raduis = !leavePosition.distance(!centrePosition).string(!this.positionFormat)
+     !lines.append('    BEND-RADIUS  $!raduis')
+     
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .TEE(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     $*********************************************
+     $*    Check, if item is an seton tee (TEE-SET-ON)
+     $*********************************************
+     if(!component.ppos[1] eq !component.ppos[2])then
+         !lines.append('TEE-SET-ON')
+         $* endpoint 
+         if(!index ne 1)then
+            if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+         else
+            !arrivePosition = !component.apos.wrt(WORLD)
+         endif 
+         !position = !component.position.wrt(WORLD)
+         !centrePoint = !position.east.string(!this.positionFormat) + ' ' + !position.north.string(!this.positionFormat) + ' ' + !position.up.string(!this.positionFormat)
+         !lines.append('    CENTRE-POINT   $!centrePoint')    $* CENTRE-POINT
+         !branchPosition = !component.ppos[3].wrt(WORLD)
+         !branchBore = !component.ppbore[3].string(!this.boreFormat)
+         !branchPoint = !branchPosition.east.string(!this.positionFormat) + ' ' + !branchPosition.north.string(!this.positionFormat) + ' ' + !branchPosition.up.string(!this.positionFormat) + '  ' + !branchBore
+         !lines.append('    BRANCH1-POINT   $!branchPoint')   $* BRANCH1-POINT
+         $* Material
+         !lines.appendArray(!this.getMaterial(!component))
+         $* SKEY 
+         !skey = !component.spref.detref.skey       
+         if(!skey.set())then
+            !lines.append('    SKEY  $!skey')
+         endif
+         return !lines    $**Return Return Return Return ***
+     endif  
+     
+     $*********************************************
+     $*   General tee
+     $*********************************************
+     !lines.append('TEE')
+     $* endpoint 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     !arriveNumber = !component.arrive
+     !position0 = !component.ppos[0].wrt(WORLD)
+     !position1 = !component.ppos[1].wrt(WORLD)
+     !position2 = !component.ppos[2].wrt(WORLD)
+     !position3 = !component.ppos[3].wrt(WORLD)
+     !position$!<arriveNumber> = !arrivePosition      $* Overwrite pos
+     !bore1 = !component.ppbore[1].string(!this.boreFormat)
+     !bore2 = !component.ppbore[2].string(!this.boreFormat)
+     !bore3 = !component.ppbore[3].string(!this.boreFormat)
+     !pos0 = !position0.east.string(!this.positionFormat) + '   ' +  !position0.north.string(!this.positionFormat) + '   ' +  !position0.up.string(!this.positionFormat) 
+     !pos1 = !position1.east.string(!this.positionFormat) + '   ' +  !position1.north.string(!this.positionFormat) + '   ' +  !position1.up.string(!this.positionFormat) + '  ' + !bore1
+     !pos2 = !position2.east.string(!this.positionFormat) + '   ' +  !position2.north.string(!this.positionFormat) + '   ' +  !position2.up.string(!this.positionFormat) + '  ' + !bore2
+     !pos3 = !position3.east.string(!this.positionFormat) + '   ' +  !position3.north.string(!this.positionFormat) + '   ' +  !position3.up.string(!this.positionFormat) + '  ' + !bore3
+     !lines.append('     END-POINT    $!pos1')
+     !lines.append('     END-POINT    $!pos2')
+     !lines.append('     CENTRE-POINT    $!pos0')
+     !lines.append('     BRANCH1-POINT    $!pos3')
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .VALV(!items is array, !index is real) is array
+     !lines = array()
+     $*VALVE-ANGLE
+      !component = !items[!index]
+      !check = '2D 2Z AV AR AX'
+      !checkArray = !check.split()
+      !finder = !component.spref.detref.skey.substring(1,2)
+      !test = !checkArray.FindFirst(!finder)
+      if(!test.set())then
+         !lines.append('VALVE-ANGLE')
+         $* Arrive position 
+         if(!index ne 1)then
+            if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+         else
+            !arrivePosition = !component.apos.wrt(WORLD)
+         endif 
+         $* Leave position
+         !leavePosition = !component.lpos.wrt(WORLD)
+         $* Arrive bore  
+         !arriveBore= !component.abore.string(!this.boreFormat)
+         $* Leave bore
+         !leaveBore = !component.lbore.string(!this.boreFormat)
+         $*EndPoint
+         !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+         !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+         !lines.append('    END-POINT    $!endPointArrive ' )
+         !lines.append('    END-POINT    $!endPointLeave ' )
+         $*CENTRE-POINT 
+         !centrePosition = !component.position.wrt(WORLD)
+         !centrePoint = !centrePosition.east.string(!this.positionFormat) + '  ' + !centrePosition.north.string(!this.positionFormat) + '  ' + !centrePosition.up.string(!this.positionFormat) 
+         !lines.append('    CENTRE-POINT     $!centrePoint ' )
+         $* Material
+        !lines.appendArray(!this.getMaterial(!component))
+        $* SKEY 
+         !skey = !component.spref.detref.skey       
+         if(!skey.set())then
+            !lines.append('    SKEY  $!skey')
+         endif  
+     endif
+     
+     $*VALVE
+     !check = 'NV KV VZ  ZB ZG VT VN VR VP VR VS VB VY VD VG VX VK VV VC CK'
+     !checkArray = !check.split()
+     !finder = !component.spref.detref.skey.substring(1,2)
+     !test = !checkArray.FindFirst(!finder)
+     if(!test.set())then
+         !lines.append('VALVE')
+         $* endpoint 
+         $* Arrive position 
+         if(!index ne 1)then
+            if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+         else
+            !arrivePosition = !component.apos.wrt(WORLD)
+         endif 
+         $* Leave position
+         !leavePosition = !component.lpos.wrt(WORLD)
+         $* Arrive bore  
+         !arriveBore= !component.abore.string(!this.boreFormat)
+         $* Leave bore
+         !leaveBore = !component.lbore.string(!this.boreFormat)
+         $*EndPoint
+         !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+         !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+         !lines.append('    END-POINT    $!endPointArrive ' )
+         !lines.append('    END-POINT    $!endPointLeave ' )
+         $* Material
+        !lines.appendArray(!this.getMaterial(!component))
+        $* SKEY 
+         !skey = !component.spref.detref.skey       
+         if(!skey.set())then
+            !lines.append('    SKEY  $!skey')
+         endif  
+     endif   
+    
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .REDU(!items is array, !index is real) is array
+     !lines = array()
+     --CONCENTRIC
+     !component = !items[!index]
+     !checkString = 'CPBW CSBW CPFL CSFL RNSC RBSC RBSW'
+     !checkArray = !checkString.split()
+     if(!component.spref.detref.skey.substring(1,2) eq 'RC')then
+        !type = 'REDUCER-CONCENTRIC'
+     endif
+     if(!checkArray.findfirst(!component.spref.detref.skey).set())then
+         !type = 'REDUCER-CONCENTRIC'
+     endif
+     $*ECCENTRIC      
+     !checkString = 'EPBW ESBW EPFL ESFL RFPL RCGL RCPF RCFA RCCL REGL REPF REFA RECL'
+     !checkArray = !checkString.split()
+     if(!component.spref.detref.skey.substring(1,2) eq 'RE')then
+        !type = 'REDUCER-ECCENTRIC'
+     endif
+     if(!checkArray.findfirst(!component.spref.detref.skey).set())then
+         !type = 'REDUCER-ECCENTRIC'
+     endif
+     !lines.append(!type)
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .FLAN(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('FLANGE')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .CROS(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('CROSS')
+     $* endpoint 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     !arriveNumber = !component.arrive
+     !position0 = !component.ppos[0].wrt(WORLD)
+     !position1 = !component.ppos[1].wrt(WORLD)
+     !position2 = !component.ppos[2].wrt(WORLD)
+     !position3 = !component.ppos[3].wrt(WORLD)
+     !position4 = !component.ppos[4].wrt(WORLD)
+     !position$!<arriveNumber> = !arrivePosition      $* Overwrite pos
+     !bore1 = !component.ppbore[1].string(!this.boreFormat)
+     !bore2 = !component.ppbore[2].string(!this.boreFormat)
+     !bore3 = !component.ppbore[3].string(!this.boreFormat)
+     !bore4 = !component.ppbore[4].string(!this.boreFormat)
+     !pos0 = !position0.east.string(!this.positionFormat) + '   ' +  !position0.north.string(!this.positionFormat) + '   ' +  !position0.up.string(!this.positionFormat) 
+     !pos1 = !position1.east.string(!this.positionFormat) + '   ' +  !position1.north.string(!this.positionFormat) + '   ' +  !position1.up.string(!this.positionFormat) + '  ' + !bore1
+     !pos2 = !position2.east.string(!this.positionFormat) + '   ' +  !position2.north.string(!this.positionFormat) + '   ' +  !position2.up.string(!this.positionFormat) + '  ' + !bore2
+     !pos3 = !position3.east.string(!this.positionFormat) + '   ' +  !position3.north.string(!this.positionFormat) + '   ' +  !position3.up.string(!this.positionFormat) + '  ' + !bore3
+     !pos4 = !position4.east.string(!this.positionFormat) + '   ' +  !position4.north.string(!this.positionFormat) + '   ' +  !position4.up.string(!this.positionFormat) + '  ' + !bore4
+     !lines.append('     END-POINT    $!pos1')
+     !lines.append('     END-POINT    $!pos2')
+     !lines.append('     CENTRE-POINT    $!pos0')
+     !lines.append('     BRANCH1-POINT    $!pos3')
+     !lines.append('     BRANCH2-POINT    $!pos4')
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .GASK(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('GASKET')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .DUCT(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .VENT(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .FTUB(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('PIPE-FIXED')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .SHU(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .COUP(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('COUPLING')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .CLOS(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .OLET(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('OLET')
+     $* endpoint 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     !position = !component.position.wrt(WORLD)
+     !centrePoint = !position.east.string(!this.positionFormat) + ' ' + !position.north.string(!this.positionFormat) + ' ' + !position.up.string(!this.positionFormat)
+     !lines.append('    CENTRE-POINT   $!centrePoint')    $* CENTRE-POINT
+     !branchPosition = !component.ppos[3].wrt(WORLD)
+     !branchBore = !component.ppbore[3].string(!this.boreFormat)
+     !branchPoint = !branchPosition.east.string(!this.positionFormat) + ' ' + !branchPosition.north.string(!this.positionFormat) + ' ' + !branchPosition.up.string(!this.positionFormat) + '  ' + !branchBore
+     !lines.append('    BRANCH1-POINT   $!branchPoint')   $* BRANCH1-POINT
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif   
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .LJSE(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .CAP(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .FBLI(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .VTWA(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .VFWA(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .TRAP(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .FILT(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .WELD(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('WELD')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+	 -- ajout
+	 -- if !leavePosition eq !arrivePosition then
+	--	 if !component.ldir eq N then
+	--	 	!leavePosition.north = !leavePosition.north.wrt(WORLD) + 3
+	--	 elseif !component.ldir eq S then
+	--	 	!leavePosition.north = !leavePosition.north.wrt(WORLD) - 3
+	--	 elseif !component.ldir eq E then
+	--	 	!leavePosition.east = !leavePosition.east.wrt(WORLD) + 3
+	--	 elseif !component.ldir eq W then
+	--	 	!leavePosition.north = !leavePosition.east.wrt(WORLD) - 3
+	--	 elseif !component.ldir eq U then
+	--	 	!leavePosition.north = !leavePosition.up.wrt(WORLD) + 3
+	--	 elseif !component.ldir eq D then
+	--	 	!leavePosition.north = !leavePosition.up.wrt(WORLD) - 3
+	--	 endif
+	 -- endif
+	 -- fin ajout
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .PCOM(!items is array, !index is real) is array
+        !lines = array()
+        !component = !items[!index]
+        !direction1 = !component.pdir[1]
+        !direction2 = !component.pdir[2]
+        if(!direction1.Opposite() eq !direction2)then $*MISC-COMPONENT
+            !lines.append('MISC-COMPONENT')
+            $* endpoint 
+            $* Arrive position 
+            if(!index ne 1)then
+                if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+            else
+                !arrivePosition = !component.apos.wrt(WORLD)
+            endif 
+            $* Leave position
+            !leavePosition = !component.lpos.wrt(WORLD)
+            $* Arrive bore  
+            !arriveBore= !component.abore.string(!this.boreFormat)
+            $* Leave bore
+            !leaveBore = !component.lbore.string(!this.boreFormat)
+            $*EndPoint
+            !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+            !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+            !lines.append('    END-POINT    $!endPointArrive ' )
+            !lines.append('    END-POINT    $!endPointLeave ' )
+            $* Material
+            !lines.appendArray(!this.getMaterial(!component))
+            $* SKEY 
+            !skey = !component.spref.detref.skey       
+            if(!skey.set())then
+                !lines.append('    SKEY  $!skey')
+            endif  
+         elseif(!direction1.Angle(!direction2) eq 90)then $*MISC-COMPONENT-ANGLE  
+             $* Arrive position 
+             !lines.append('MISC-COMPONENT-ANGLE')
+             if(!index ne 1)then
+                if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+             else
+                !arrivePosition = !component.apos.wrt(WORLD)
+             endif 
+             $* Leave position
+             !leavePosition = !component.lpos.wrt(WORLD)
+             $* Arrive bore  
+             !arriveBore= !component.abore.string(!this.boreFormat)
+             $* Leave bore
+             !leaveBore = !component.lbore.string(!this.boreFormat)
+             $*EndPoint
+             !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+             !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+             !lines.append('    END-POINT    $!endPointArrive ' )
+             !lines.append('    END-POINT    $!endPointLeave ' )
+             $*CENTRE-POINT 
+             !centrePosition = !component.position.wrt(WORLD)
+             !centrePoint = !centrePosition.east.string(!this.positionFormat) + '  ' + !centrePosition.north.string(!this.positionFormat) + '  ' + !centrePosition.up.string(!this.positionFormat) 
+             !lines.append('    CENTRE-POINT     $!centrePoint ' )
+             $* Material
+            !lines.appendArray(!this.getMaterial(!component))
+            $* SKEY 
+             !skey = !component.spref.detref.skey       
+             if(!skey.set())then
+                !lines.append('    SKEY  $!skey')
+             endif  
+        endif
+        return !lines
+endmethod
+------------------------------------------------------------------------
+define method .UNIO(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('UNION')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+     !leavePosition = !component.lpos.wrt(WORLD)
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     $* SKEY 
+     !skey = !component.spref.detref.skey       
+     if(!skey.set())then
+        !lines.append('    SKEY  $!skey')
+     endif  
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .INST(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .ATTA(!items is array, !index is real) is array
+     !lines = array()
+	-- support
+	!component = !items[!index]
+	--
+	!lines.append('SUPPORT')
+         $* endpoint 
+         if(!index ne 1)then
+            if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+         else
+            !arrivePosition = !component.apos.wrt(WORLD)
+         endif 
+		 $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+         !position = !component.position.wrt(WORLD)
+         !centrePoint = !position.east.string(!this.positionFormat) + ' ' + !position.north.string(!this.positionFormat) + ' ' + !position.up.string(!this.positionFormat) + ' ' + !leaveBore
+         !lines.append('    CO-ORDS   $!centrePoint')    $* CENTRE-POINT
+         $* Material
+         -- !lines.appendArray(!this.getMaterial(!component))
+         $* SKEY 
+         !skey = !component.spref.detref.skey       
+         if(!skey.set())then
+            !lines.append('    SKEY  SKID')
+			!lines.append('    SUPPORT-DIRECTION UP')
+			-- $!skey')
+         endif
+	
+	
+     !lines.append('PIPE')
+     $* endpoint 
+     $* Arrive position 
+     !arrivePosition = !component.apos.wrt(WORLD)
+     $* Leave position
+	 if(!index lt !items.size())then
+	    !leavePosition = !items[!index + 1].apos.wrt(WORLD)
+     else
+        !leavePosition = !component.lpos.wrt(WORLD)
+     endif 
+	 
+	 $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+	 -- center point
+	 -- !centrePosition = !component.position.wrt(WORLD)
+	 -- !centrePoint = !centrePosition.east.string(!this.positionFormat) + '  ' + !centrePosition.north.string(!this.positionFormat) + '  ' + !centrePosition.up.string(!this.positionFormat) 
+     -- !lines.append('    CENTRE-POINT     $!centrePoint ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+	
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .TAPE(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .TRNS(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .STRT(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .OFST(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .PLEN(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .PLAT(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .THRE(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .BRCO(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .MESH(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .GRIL(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .COWL(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .DAMP(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .HFAN(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .SILE(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .BATT(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .AHU(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .STIF(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .HACC(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .HSAD(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .IDAM(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .TP(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .SPLR(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .SKIR(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .FLEX(!items is array, !index is real) is array
+     !lines = array()
+
+     return !lines
+endmethod
+------------------------------------------------------------------------
+define method .TUBI(!items is array, !index is real) is array
+     !lines = array()
+     !component = !items[!index]
+     !lines.append('PIPE')
+     $* endpoint 
+     $* Arrive position 
+     if(!index ne 1)then
+        if(!items[!index - 1].type eq 'ATTA')then
+			!arrivePosition = !component.apos.wrt(WORLD)
+		else
+			!arrivePosition = !items[!index - 1].lpos.wrt(WORLD)
+		endif
+     else
+        !arrivePosition = !component.apos.wrt(WORLD)
+     endif 
+     $* Leave position
+-- modify for atta
+     if(!index lt !items.size())then
+		!leavePosition = !items[!index + 1].apos.wrt(WORLD)
+	 else
+		!leavePosition = !component.lpos.wrt(WORLD)
+	 endif
+		
+     $* Arrive bore  
+     !arriveBore= !component.abore.string(!this.boreFormat)
+     $* Leave bore
+     !leaveBore = !component.lbore.string(!this.boreFormat)
+     $*EndPoint
+     !endPointArrive = !arrivePosition.east.string(!this.positionFormat) + '  ' + !arrivePosition.north.string(!this.positionFormat) + '  ' + !arrivePosition.up.string(!this.positionFormat) + '  ' + !arriveBore
+     !endPointLeave = !leavePosition.east.string(!this.positionFormat) + '  ' + !leavePosition.north.string(!this.positionFormat) + '  ' + !leavePosition.up.string(!this.positionFormat) + '  ' + !leaveBore
+     !lines.append('    END-POINT    $!endPointArrive ' )
+     !lines.append('    END-POINT    $!endPointLeave ' )
+     $* Material
+     !lines.appendArray(!this.getMaterial(!component))
+     return !lines
+endmethod
