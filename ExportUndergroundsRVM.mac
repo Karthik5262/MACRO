@@ -1,0 +1,18 @@
+export file /%projdir%\CADADM\REVIEW\Undergrounds.rvm over
+repr level 6
+repr level pipe 8
+repr level nozz 6
+repr level stru 6
+repr mass       6
+export holes on
+export encoding utfeight
+export autocolour on
+export autocolour displayexport on
+export repr on
+export all zone wi matchw(name,'/?U?????*') and purp of site eq 'LMD'
+export all zone wi matchw(name,'*ROADS-EXISTING*')
+export all site wi matchw(name,'/U-BA*')
+export exclude /U-BA01\EXCAVATIONS
+export exclude /U-BA03\EXCAVATIONS
+export finish
+
