@@ -1,0 +1,49 @@
+define function !!branrename()
+ 
+--!ce = ce 
+--!cel = bran 
+--var !coll eval name for all $!cel
+--!ce = !!ce.fullname
+--!cel = !!ce.name
+--$p $!coll
+
+--endfunction
+
+!pip = ce
+!Pipename = name of pipe
+var !branlist coll all bran for $!pip
+ Do !x from 1 to !branlist.size()
+ !thisbran = !branlist[!x]
+ --Do !x values !branlist 
+   $!thisbran UNN
+ -- enddo
+ --Do !x values !branlist.SIZE()
+  --!pipename = name of owner of $!x
+  --!branindx = INDEXT of $!x
+  --!Pipindex = !branlist[!x]
+  !newname = !pipename + '/B' + !x.string() 
+  
+ --!newname = !pipename + '/B' + !pipindex.string() 
+ --RENAME ALL $!thisbran $!newname 
+  NAME /$!newname
+  
+ enddo
+--Do !bransta value !branlist 
+  --!pipeown = pipe
+ --!pipename = $!pipeown.name
+ 
+ --!branindx = !bransta.indext
+ --!newname = !pipename + '/B' + !branindx.string()
+ 
+ --rename $!x to $!newname 
+ 
+ --enddo
+ 
+ endfunction
+ 
+ 
+
+
+
+
+--------------------------------------------------------------------------------------
