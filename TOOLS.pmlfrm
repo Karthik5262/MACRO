@@ -1,0 +1,280 @@
+setup form !!tools dialog dock left
+
+ !!tools title 'display'
+ 
+ button .ref 'REFRESH FORM' call |!this.refre()| width 20
+  frame .comps |Components| at xmin .ref ymax +0.2
+!buttons = 8
+	!complist = split('ATTA ELBO VALV GASK LJSE FLAN FBLI TEE OLET REDU PCOM WELD CAP FTUB FILT INST')
+	Do !i indices !complist
+		if(int((!i - 1) / !buttons) eq (!i - 1) / !buttons) then
+			button .comp$!i |$!complist[$!i]| at x0  ymax  pixmap "AvevaSharedIcons>ID_$!complist[$!i]>32" Callback|!this.Createpipecomps('$!complist[$!i]')|
+		else
+			button .comp$!i |$!complist[$!i]| at xmax ymin pixmap "AvevaSharedIcons>ID_$!complist[$!i]>32" Callback|!this.Createpipecomps('$!complist[$!i]')|
+		endif
+		!this.comp$!i$n.setTooltip('$!complist[$!i]')
+	Enddo
+
+
+ exit
+ 
+
+ frame .Front2 foldup |CONNECTION| at xmin 0 ymax width 20 height 
+
+ button .fcon 'FCONN' call |fconn| width 10 background green
+ button .con 'CONN' call |conn| width 10 
+ button .cnex 'NEXCON' tooltip'component next connection in piping' call |next conn| width 10
+ button .LST 'BLS' tooltip 'Branch last mem' call |Bran conn pt to last mem| width 5 at xmin .fcon ymax+0.2
+ button .FST 'FST' tooltip 'Branch first mem' call |bran conn ph to first mem| width 5
+ button .HTcon 'PH/PT' tooltip 'component connection for pipe' call |BRAN CONN PH TO PT OF ID@| width 10
+ button .PTcon 'PT/PH' tooltip 'component connection for pipe' call |BRAN CONN PT TO PH OF ID@| width 10
+ button .HHcon 'PH/PH' tooltip 'component connection for pipe' call |BRAN CONN PH TO PH OF ID@| width 5 at xmin.LST ymax +0.2
+ button .TTcon 'PT/PT' tooltip 'component connection for pipe' call |BRAN CONN PT TO PT OF ID@| width 5
+ button .Hid 'PH@' tooltip 'component connection for pipe' call |BRAN CONN PH TO ID@| width 10
+ button .Tid 'PT@' tooltip 'component connection for pipe' call |BRAN CONN PT TO ID@| width 10
+ button .add 'ADD' tooltip 'add current element' call |ADD CE| width 5 at xmin.HHcon ymax +0.2
+ button .rem 'REM' tooltip 'remove current element' call |rem ce| width 5 
+ button .del 'DEL' tooltip 'Delete ce' call |!this.delce()| width 10 background red 
+ button .delmem 'DELMEM' tooltip 'All component deleted' call |!this.delall()| width 10 background red 
+ 
+ 
+ exit
+ 
+ frame .Front3 |MODE| at xmin.front2 ymax width 20 height 5
+ rgroup .mode call |!this.modeupdate()|
+   add tag |FOR|
+   add tag |BAC|
+Exit
+ 
+ frame .Front4 foldup |PIPING GADGETS| at xmin.front3 ymax width 20 height 5
+ 
+ button .Rels 'RESELE' tooltip 'relect the component' call |choo all| width 10
+ button .Lear 'PA PL' tooltip 'component p1 & p2' call |Q PA PL| width 5
+ button .thro 'ID@' tooltip 'Thro id@' call |thro id@| width 5 
+ button .dtxr 'DTXR' tooltip 'component dtxr' call |q dtxr| width 5
+ button .glps 'reatta' tooltip 'reorder in atta' call |!this.ResolveBadGeometrys()| width 5
+ button .pra'PRA' tooltip 'PRACTIES' call |!this.querysbfr()| width 10 at xmin.rels ymin+1
+
+
+ 
+ Exit
+--------------------------------------------------- 
+ define method .modeupdate()
+ 
+ !!tools.FOR.VAL = true
+ If (!!tools.gridon.val)then
+ For
+ else 
+ BAC
+ endif
+ 
+ endmethod
+   
+-----------------------------------------------
+ define method .refre()
+ 
+ kill !!tools
+ pml reload form !!tools
+ show !!tools 
+ 
+ endmethod
+
+-------------------------------------------
+Define method .delall()
+
+delete $!!Ce.type mem
+
+endmethod
+
+-------------------------------------------
+Define method .delce()
+
+delete $!!Ce.type
+
+endmethod
+
+------------------------------------------------------------------------------------------
+Define Method .querysbfr()
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+!PIPE = pipe
+Handle ANY
+	return
+Endhandle
+!pspec = NAME OF pspec of pipe
+HANDLE ANY
+!pipe.pspec = !pipe.pspec
+!pspec = NAME OF pspec of pipe
+ENDHANDLE
+$P pipe >>> $!pspec
+-- q :HRPSattaRef of SBFR
+$P  >>> $!Pipe.pspec
+$P Q pipe
+Do !PIPE values !pipe.pspec
+	!name = NAME OF $!PIPE
+	!code = PSPEC OF $!PIPE
+	$P $!name >>> $!code
+Enddo
+
+Endmethod
+
+
+--------------------------------------------------------------------------------------------
+
+Define Method .Createpipecomps(!type is string)
+
+if not(!!CE.type eq 'BRAN' or !!CE.own.type eq 'BRAN') then
+	return error1 'Cannot create a $!type at this level'
+Endif
+var !validcomps Eval Tanswer for all SELE for Pspec of PIPE 
+!validcomps.sortunique()
+!exist = !validcomps.find(!type)
+
+if !exist.size() eq 0 then
+	return error1 'SPEC does not contain $!type elements'
+Endif
+	New $!type Choo All
+	!this.connectElement('CONN')
+	if badref(spr) then
+		Delete $!type
+	Endif
+
+Endmethod
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------
+define method .mbac()
+------------------------------------------------------------------
+!mbac = 'bac'
+callback |bac|
+
+endmethod
+
+-------------------------------------------------------------------
+define method .mfor()
+------------------------------------------------------------------
+!mfor = 'for'
+callback |for|
+
+endmethod
+
+
+-----------------------------------------------------------------------
+
+Define Method .ResolveBadGeometrys()
+-----------------------------------------------------------------------
+
+!ce = CE
+!bran = BRAN
+Handle Any
+	return error1 'Select Only BRAN...'
+Endhandle
+ADD BRAN
+var !allatta Eval name for all ATTA FOR $!bran
+if !allatta.size() eq 0 then
+	return
+Endif
+
+!path = '%AVEVA_DESIGN_WORK%\CheckBran.txt'
+ALPHA FILE "$!path" OVER
+CHECK BRAN
+ALPHA FILE END
+-- syscom 'start $!path'
+
+!file = object File(!path)
+!filedata = !file.readfile()
+!file.delete()
+-- q var !filedata
+!badatta = Array()
+!badgeom = FALSE
+Do !x indices !filedata
+	if !filedata[$!x].matchwild('*BAD*GEOMETRY*') then
+		!badgeom = True
+		break
+	Endif
+Enddo
+
+if !badgeom eq F then
+	return
+Endif
+
+var !spkbrkAtta Coll All ATTA with spkbrk FOR $!bran
+
+Do !atta values !spkbrkAtta
+	$!atta SPKBRK F
+Enddo
+
+var !brantubes Coll all TUBI FOR $!bran
+!connectedtubi = Array()
+Do !atta values !allatta
+	var !tubis Coll all TUBI within volume $!atta for $!bran
+	if !tubis.size() eq 0 then
+		!volume = Object VOLUME(!atta.dbref())
+		$!atta
+		!updir = P0 DIR WRT/*
+		!uppos = P0 POS WRT/*
+		!lod = LOD
+		!line = Object Line(!volume.To,!volume.To.offset(!updir,!lod))
+		!volume.To = !line.Near(!uppos)
+		var !tubis Coll all TUBI within $!volume.from To $!volume.To for $!bran
+	Endif
+	
+	-- q var !tubis
+	if !tubis.size() eq 0 then
+		$P Check $!atta is not on Tube...
+		skip
+	Endif
+	!connectedtubi.append(!tubis[1])
+
+Enddo
+
+FOR
+Do !tube values !brantubes
+	!index = !connectedtubi.find(!tube)
+	skip if !index.size() eq 0
+	!copyatta = !allatta
+	!copyatta.reindex(!index)
+	!distances = Array()
+	Do !atta values !copyatta
+		!dist = !atta.dbref().pos.Distance(!tube.dbref().ppos[1])
+		!distances.append(!dist)
+	Enddo
+	-- q var !distances
+	!tubecomp = !tube.split().last().dbref()
+	!index = !distances.sortedindices()
+	!copyatta.reindex(!index)
+	
+	if !tubecomp.type eq 'BRAN' then
+		$!bran REORDER $!copyatta[1] BEFORE FIRST MEM
+	Else
+		$!bran REORDER $!copyatta[1] AFTER $!tubecomp
+	Endif
+	
+	Do !x from 2 to !copyatta.size()
+		!prev = !x - 1
+		$!bran REORDER $!copyatta[$!x] AFTER $!copyatta[$!prev]
+	Enddo
+Enddo
+
+Do !atta values !spkbrkAtta
+	$!atta SPKBRK T
+Enddo
+
+$!ce
+
+Endmethod
+
+--------------------------------------------------------------------------------------------------------------------
