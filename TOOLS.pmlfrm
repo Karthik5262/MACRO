@@ -44,9 +44,18 @@ setup form !!tools dialog dock left
  rgroup .desmode call |!this.modeupdate()|
    add tag |FOR|
    add tag |BAC|
-Exit
+ exit
+   
+  frame .Front4 |DIR|
+     Button .diru 'U' tooltip 'DIR U' call |DIR U| width 2.5
+     Button .dird 'D' tooltip 'DIR D' call |DIR D| width 2.5
+	 Button .dirE 'E' tooltip 'DIR E' call |DIR E| width 2.5
+	 Button .dirW 'W' tooltip 'DIR W' call |DIR W| width 2.5
+	 Button .dirN 'N' tooltip 'DIR N' call |DIR N| width 2.5
+	 Button .dirS 'S' tooltip 'DIR N' call |DIR S| width 2.5
+ exit
  
- frame .Front4 foldup |PIPING GADGETS| at xmin.front3 ymax width 20 height 5
+ frame .Front5 foldup |PIPING GADGETS| at xmin.front4 ymax width 20 height 5
  
  button .Rels 'RESEL' tooltip 'relect the component' call |choo all| width 5
  button .Lear 'PA PL' tooltip 'component p1 & p2' call |Q PA PL| width 5
@@ -293,4 +302,3 @@ $!ce
 Endmethod
 
 --------------------------------------------------------------------------------------------------------------------
-
