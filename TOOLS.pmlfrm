@@ -5,7 +5,7 @@ setup form !!tools dialog dock left
  button .ref 'REFRESH FORM' call |!this.refre()| width 20
   frame .comps |Components| at xmin .ref ymax +0.2
 !buttons = 8
-	!complist = split('ATTA ELBO VALV GASK LJSE FLAN FBLI TEE OLET REDU PCOM WELD CAP FTUB FILT INST')
+	!complist = split('ATTA ELBO VALV GASK LJSE FLAN FBLI TEE OLET REDU PCOM WELD CAP FTUB FILT INST COUP')
 	Do !i indices !complist
 		if(int((!i - 1) / !buttons) eq (!i - 1) / !buttons) then
 			button .comp$!i |$!complist[$!i]| at x0  ymax  pixmap "AvevaSharedIcons>ID_$!complist[$!i]>32" Callback|!this.Createpipecomps('$!complist[$!i]')|
@@ -23,7 +23,7 @@ setup form !!tools dialog dock left
 
  button .fcon 'FCONN' call |fconn| width 10 background green
  button .con 'CONN' call |conn| width 10 
- button .cnex 'NEXCON' tooltip'component next connection in piping' call |next conn| width 10
+ button .cnex 'NEXT' tooltip'Goto next component' call |next| width 10
  button .LST 'BLS' tooltip 'Branch last mem' call |Bran conn pt to last mem| width 5 at xmin .fcon ymax+0.2
  button .FST 'FST' tooltip 'Branch first mem' call |bran conn ph to first mem| width 5
  button .HTcon 'PH/PT' tooltip 'component connection for pipe' call |BRAN CONN PH TO PT OF ID@| width 10
@@ -41,31 +41,50 @@ setup form !!tools dialog dock left
  exit
  
  frame .Front3 |MODE| at xmin.front2 ymax width 20 height 5
- rgroup .mode call |!this.modeupdate()|
+ rgroup .desmode call |!this.modeupdate()|
    add tag |FOR|
    add tag |BAC|
 Exit
  
  frame .Front4 foldup |PIPING GADGETS| at xmin.front3 ymax width 20 height 5
  
- button .Rels 'RESELE' tooltip 'relect the component' call |choo all| width 10
+ button .Rels 'RESEL' tooltip 'relect the component' call |choo all| width 5
  button .Lear 'PA PL' tooltip 'component p1 & p2' call |Q PA PL| width 5
  button .thro 'ID@' tooltip 'Thro id@' call |thro id@| width 5 
  button .dtxr 'DTXR' tooltip 'component dtxr' call |q dtxr| width 5
- button .glps 'reatta' tooltip 'reorder in atta' call |!this.ResolveBadGeometrys()| width 5
- button .pra'PRA' tooltip 'PRACTIES' call |!this.querysbfr()| width 10 at xmin.rels ymin+1
-
+ button .Nexto 'THRO CE' tooltip 'Next thro ce' call |thro ce| width 10
+ button .gta'GTWORK' tooltip 'Getwork CE' call |!this.gtra()| width 10 at xmin.Rels ymin+1
+ button .pra'PRA' tooltip 'PRACTIES' call |!this.pra()| width 10 at xmin.rels ymin+1
 
  
  Exit
+ 
+-----------------------------------------------------
+ define method .pra()
+ 
+ Var !lck coll all bran mem for ce 
+  Do !lckmem values !lck 
+      unlock !lckmem 
+	endo 
+
+endmethod
+ 
+ 
 --------------------------------------------------- 
  define method .modeupdate()
  
- !!tools.FOR.VAL = true
- If (!!tools.gridon.val)then
- For
- else 
+ --!!tools.FOR.VAL = true
+ --If (!!tools.gridon.val)then
+ --!fomd = FOR
+ If (!this.desmode.val eq 1) then
+  FOR
+ 
+ ---If (!number LT 0) then 
+ 
+    ---- !formod = FOR
+ else
  BAC
+ 
  endif
  
  endmethod
@@ -133,7 +152,7 @@ if !exist.size() eq 0 then
 	return error1 'SPEC does not contain $!type elements'
 Endif
 	New $!type Choo All
-	!this.connectElement('CONN')
+	--!this.connectElement('CONN')
 	if badref(spr) then
 		Delete $!type
 	Endif
@@ -156,19 +175,15 @@ Endmethod
 
 
 ------------------------------------------------------------------
-define method .mbac()
-------------------------------------------------------------------
-!mbac = 'bac'
-callback |bac|
+define method .gtra()
 
-endmethod
 
--------------------------------------------------------------------
-define method .mfor()
-------------------------------------------------------------------
-!mfor = 'for'
-callback |for|
-
+!dbna = Dbname for ce
+--var !gtwork coll $!dbna for ce
+ --Do !dbrel values !gtwork
+  getwork $!dbna
+  --enddo
+  
 endmethod
 
 
@@ -278,3 +293,4 @@ $!ce
 Endmethod
 
 --------------------------------------------------------------------------------------------------------------------
+
