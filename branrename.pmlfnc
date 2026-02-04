@@ -25,7 +25,7 @@ var !branlist coll all bran for $!pip
   
  --!newname = !pipename + '/B' + !pipindex.string() 
  --RENAME ALL $!thisbran $!newname 
-  NAME /$!newname
+  NAME $!newname
   
  enddo
 --Do !bransta value !branlist 
@@ -46,4 +46,39 @@ var !branlist coll all bran for $!pip
 
 
 
---------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
