@@ -1,0 +1,27 @@
+
+define function !!pipetemp()
+
+if !!ce.type.eq ('PIPE')then 
+ !pip = pipe 
+
+endif
+ 
+ !Piptem = temp of pipe
+
+var !branlist coll all bran for $!pip
+
+ !!alert.message('MAKE SURE YOU KEPT AT PIPE LEVEL ...')
+ 
+    Do !tem from 1 to !branlist.size()
+      !thbran = !branlist[!tem]
+	   $!thbran
+      temp $!piptem	  
+	  
+	  enddo
+	  
+    !!alert.message('PROCESS COMPLETED')
+ 
+ endfunction
+ 
+  
+  
