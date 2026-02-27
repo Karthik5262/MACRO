@@ -1,0 +1,34 @@
+$M = Runs a macro in pdms
+$! = Evaluate a varieble
+$. = Terminates a macro
+$S = Defines a synonym
+$G = Defines a global synonym
+$S- = Turns synonyms off
+$S+ = Turns synonyms On
+$QS = Queary’s the synonyms
+$H = Help
+$HR = get all options for $R
+$Q = Another syntax help
+$P = Prints a line to your command line
+$$ = Adds a $ symbol
+$D = Default argument value
+
+$t8+ = turn on error handling
+$t8- = turn off error handling
+$* = Comment line
+$( = Starts a comment block
+$) = Ends a comment block
+To turn the pml trace on and off I use
+$R To turn trace Off
+$R6 To turn trace On
+$R109
+
+$R 1 = Tracing to shell window (default)
+2 = Tracing to requests window
+4 = Tracing of only input lines executed
+8 = Tracing of all input lines
+16 = Tracing without $ expresion (default off)
+32 = Tracing includes line numbers
+64 = Tracing of macro/function changes
+100 = General Debugging
+102 = capture trace in ALPHA LOG
