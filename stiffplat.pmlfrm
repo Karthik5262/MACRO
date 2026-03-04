@@ -1,0 +1,97 @@
+
+
+Setup form !!stiffplat at Xr 0.25 Yr 0.25
+
+ title |STIFFERNER PLATE|
+ PATH DOWN
+ text .Stiffnorth |NORTH POS:| width 15 ISOU
+ text .stiffeast |EAST POS:| width 15 ISOU 
+ text .stiffUp |UP POS:| width 15 ISOU 
+
+ Button .OK|OK| call|!this.createstiff()| at xmin.stiffup 
+ Button .cancel|CANCEL| call|kill!!stiffplat| at xmax.stiffup ymin.OK
+
+ 
+
+exit
+
+Define method .stiffplat()
+ 
+!this.Stiffnorth.val = '0'
+!this.stiffeast.val = '0'
+!this.stiffUp.val= '0'
+
+endmethod
+
+define method .createstiff()
+
+--New subs
+!stiffnorthpos = !this.stiffnorth.val.real()
+!stiffeastpos  = !this.stiffeast.val.real()
+!stiffuppos    = !this.stiffup.val.real()
+
+
+
+New subs copy =671106134/70017 
+
+pos E $!stiffeastpos N $!stiffnorthpos U $!stiffuppos in world
+
+
+
+endmethod
+
+
+ --!Width = !!alert.input('set width','')
+ --!height = !!alert.input('set heigth','')
+ --!Pos = pick pos
+ --var !ref Ref of id@
+
+--New subs
+
+--Pos E 
+$(  New Subs
+
+--!pos = !ref.dbref()
+
+ Handle any 
+  return 
+ endhandle 
+ pos $!ref
+
+ New Pane 
+ New Ploo 
+ hei 15
+
+ new pave
+ own 
+ NEW PAVE 
+POS E $!Width N 0 U 0 
+own
+new pave
+pos E $!width N $!height U 0 
+own
+New pave 
+pos E 0 N $!height U 0 
+own OF OWN 
+
+
+New Pane 
+
+New Ploo 
+hei 15
+
+new pave
+own 
+NEW PAVE 
+POS E $!Width N 0 U 0 
+own
+new pave
+pos E $!width N $!height U 0 
+own
+New pave 
+pos E 0 N $!height U 0 
+own $)
+
+
+ 
+ endmethod
