@@ -40,22 +40,21 @@ setup form !!tools dialog dock left
  
  exit
  
- frame .Front3 |MODE| at xmin.front2 ymax width 20 height 5
+ frame .Front3 foldup |MODE                                         DIR | at xmin.front2 ymax width 20 height 2.5
  rgroup .desmode call |!this.modeupdate()|
    add tag |FOR|
    add tag |BAC|
- exit
    
-  frame .Front4 |DIR|
      Button .diru 'U' tooltip 'DIR U' call |DIR U| width 2.5
      Button .dird 'D' tooltip 'DIR D' call |DIR D| width 2.5
 	 Button .dirE 'E' tooltip 'DIR E' call |DIR E| width 2.5
 	 Button .dirW 'W' tooltip 'DIR W' call |DIR W| width 2.5
 	 Button .dirN 'N' tooltip 'DIR N' call |DIR N| width 2.5
 	 Button .dirS 'S' tooltip 'DIR N' call |DIR S| width 2.5
+	 
  exit
- 
- frame .Front5 foldup |PIPING GADGETS| at xmin.front4 ymax width 20 height 5
+   
+ frame .Front5 foldup |PIPING GADGETS| at xmin.front3 ymax width 20 height 5
  
  button .Rels 'RESEL' tooltip 'relect the component' call |choo all| width 5
  button .Lear 'PA PL' tooltip 'component p1 & p2' call |Q PA PL| width 5
@@ -63,18 +62,109 @@ setup form !!tools dialog dock left
  button .dtxr 'DTXR' tooltip 'component dtxr' call |q dtxr| width 5
  button .Nexto 'THRO CE' tooltip 'Next thro ce' call |thro ce| width 10
  button .gta'GTWORK' tooltip 'Getwork CE' call |!this.gtra()| width 10 at xmin.Rels ymin+1
+ button .Aidce'AIDCE' tooltip 'AID CE ARROW' call |!this.Aidce()| width 5
+ button .linespl'ISOSPLIT' tooltip 'ISOMETRIC LINE SPLIT' call |!this.Linespllitatta()| width 10
+ button .Coll'COLLECT' tooltip 'ISOMETRIC LINE SPLIT' call |!this.Linespllitatta()| width 10
+ 
  button .pra'PRA' tooltip 'PRACTIES' call |!this.pra()| width 10 at xmin.rels ymin+1
-
+ button .pra1'PRA-1' tooltip 'PRACTIES' call |!this.pra1()| width 10 at xmin.rels ymin+1
+ --button .pra3'PRA-3' tooltip 'PRACTIES' call |!this.pra3()| width 10 at xmin.rels ymin+1
  
  Exit
  
+-------------------------------------------------------------- 
+ Define method .pra3()
+ 
+ !filename = 'C:/TEMP/PIPE.txt'
+ 
+ !fileobj = object file(!filename)
+ !filecontent = !fileobj.readfile()
+ 
+ Do !pip from 1 to !filecontent.size()
+    !piptmp = !filecontent[!pip]
+    $p $!piptmp 
+ enddo
+  
+ -- $p $!pip
+ 
+ 
+ endmethod
+ 
+---------------------------------------------------------------
+Define method .pra1()
+
+  --!Paraname = para of N3
+  
+  ---$p $!paraname
+  
+  --define method .reordercomp()
+
+ 
+!list = object LIST()
+!members = !!collect(all members)
+ 
+-- Filter out elements and store names/references
+do !x from 1 to !members.size() 
+    !name = !members[!x].name
+    !list.append(!name + '|' + !members[!x].string())
+enddo
+ 
+-- Sort the list alphabetically
+!list.sort()
+ 
+-- Apply the reorder
+do !x from 1 to !list.size()
+    !parts = !list[!x].split('|')
+    !ref = !parts[2]
+    
+    -- Move the element to the position of the current index
+    REORDER $!ref BEFORE $!x
+enddo
+ 
+$P Reordering complete.
+ 
+
+endmethod 
+ 
+ --endmethod 
+ ------------------------------------------------------------
+ define method .Linespllitatta()
+ 
+ new atta 
+ choo all conn 
+ atty XXXX
+ 
+ endmethod
+------------------------------------------------------------ 
+ Define method .Aidce()
+ 
+ AID CEARROW ON
+ !Hei = !!Alert.input('set height','')
+ Aid cearrow hei $!Hei
+
+ endmethod
+
+---------------------------------------------------------------------------------
+ Define method .pra()
+ 
+
+
+ --!Width = !!alert.input('set width','')
+ --!height = !!alert.input('set heigth','')
+ --!Pos = pick pos
+ --var !ref Ref of id@
+
+
+ 
+ endmethod
+ 
 -----------------------------------------------------
- define method .pra()
+ define method .Lcksce()
  
  Var !lck coll all bran mem for ce 
   Do !lckmem values !lck 
       unlock !lckmem 
-	endo 
+	enddo 
 
 endmethod
  
