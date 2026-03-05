@@ -1,0 +1,209 @@
+-- ----------------------------------------------------------------------------
+-- Name of Application    : BAF_Review.pmlfrm
+-- Application            : Form for Review Generation BAF Project
+-- Developed by           : Mirza Azmatulla Baig
+-- Data                   : 08/08/2021
+-- Revision by            : 
+-- Data                   : 
+-- ----------------------------------------------------------------------------
+
+
+setup form !!BAFReview dialog size 25 15
+
+--!this.initcall = '!this.ReadAutoColor()'
+
+
+  -- Form Members
+  member .Versn is STRING
+  member .fpath is STRING
+
+  -- Aid Number
+  member .aidNumber   is REAL
+
+  -- Line definition
+  member .volume      is GPHVOLUME
+  -- Original
+  member .original    is GPHVOLUME
+
+  -- From/To position  
+  member .position    is POSITIONLINK
+  
+  
+  !!BAFReview.formtitle = |BAF ReView App|
+  --!!FormOne.initcall = |!this.init()|
+  !lsiz = |width 10 height 10|
+  !ksiz = |width 8 height 10|    
+  !ddis = |PIPE,MECH,STRU,ELEC,INST,SAFE,HDLG,MISC,TELE|
+  !rdis = |PIPE,MECH,STRU,ELEC,INST,SAFE,HDLG,MISC,TELE|  
+  !dsta = |CURRENT,INTEGRATN,FUTURE|
+  !Rsta = |CUR,INT,FUT|  
+  
+  
+  -- frame .fra1 'Select Option' width 28  $* at xmax .fra1 ymin .fra1 
+    -- rtoggle .rtog1 'Site' anchor L  Callback ''   
+      path right	
+    --rtoggle .rtog2 'Elements' anchor T Callback ''
+    --rtoggle .rbTipoRevVol 'Volume' anchor T Callback ''    
+    --rtoggle .rtog4 'Drawlist' anchor T Callback ''
+  -- exit
+  para .par1 text 'Check Folder  ->> "C:\Temp\Barossa"' width 25
+  -- text .txt1  at xmax.par1 +1 ymin.par1 anchor T + L + R width 15 is string     
+
+   frame .fra2 at xmin.par1 ymax.par1 'List of Modules' width 25 
+
+    list .lst1 'Module Name'  call || multi $!lsiz
+    list .lst2 'Discipline'  call || multi $!ksiz    
+    list .lst3 'Status'  call || multi $!ksiz  
+    toggle .studtog 'Include Study ' at xmin.lst1 + 1 ymax.lst1       
+    button .clr at xmin.studtog + 15 ymin.studtog 'Clear Selection' width 15 hei 0.2 call |!this.lst1.ClearSelection() !this.lst2.ClearSelection() !this.lst3.ClearSelection()|
+  exit
+    
+   frame .fra3 at xmin.par1 ymax.fra2 'Representation' width 25 
+    para .par2 text 'Insulation' width 8   
+    option .opt1 call '' width 5
+    para .par3 at xmin.par2 ymax.par2 text 'Obstruction' width 8    
+    option .opt2 call '' width 5  
+    para .par4 at xmax.opt1 + 2 ymin.opt1 text 'Holes' width 8      
+    toggle .tog1 at xmax.par4 - 2 ymin.par4 
+    para .par5 at xmin.par4 ymax.par4 text 'Input Simulate Version' width 15 
+      
+    -- toggle .tog2 at xmax.par5 ymin.par5     
+   ----option .opt3 call '' at xmax.tog1 ymin.tog1 width 5  
+    button .ckSimu 'For Nwd' at xmin.par5 ymax.par5 call |!this.cksimul(!!Alert.Confirm( 'Do you have Simulate'))|      
+  exit
+
+
+  -- button .xRVM at xmin.fra3 ymax.fra3 + 0.5 'Gen RevW' call '!this.GenRVM(!this.lst1,!this.opt1.val,!this.opt2.val,!this.tog1.val,!this.opt3.val)'
+  button .xRVM at xmin.fra3 ymax.fra3 + 0.5 'Gen RevW' call  '!this.GenNWD()'
+  -- button .yRVM at 'Gen Reviwe' call  '!this.GenNWD()'
+  --button .xNWD at 'Gen NWD' call ''
+  button .OFld 'Open' at xmax.xRVM + 0.5 ymin.xRVM call |!this.Xopn(!this.fpath)|
+  button .xOK at xmax form - 13 'Dismiss' tooltip 'Close'   ok
+  --button .xAtt at 'ATTEle' call '!this.AttEle(!this.txt1,!this.lst2)'
+!this.lst2.dtext = !ddis.split(',')    
+!this.lst2.rtext = !rdis.split(',') 
+!this.lst3.dtext = !dsta.split(',')    
+!this.lst3.rtext = !rsta.split(',')   
+exit  
+
+define method .cksimul(!ans is string)
+  if !ans eq 'YES' then
+   !this.Versn = !!Alert.Input( 'Please Type Navis Simulate Version:
+     2017 = [1]
+     2019 = [2]
+     2020 = [3]
+     2021 = [4]     
+     2022 = [5]','2')
+  else
+  !this.Versn = 'NO'
+  endif
+endmethod
+
+define method .GenNWD()
+!Versn = !this.Versn
+if unset(!this.lst1.val) then
+ !!alert.message('Please select Modules')
+ endif
+ 
+ if not unset(!this.lst2.val) then
+  !str = |func eq '|  
+  if !this.lst2.val.size().eq(1) then
+   !lst2 = !str & !this.lst2.selection()[1] & |'|
+   else
+  !str = |func eq '|    
+     !or = |' or func eq '|
+     Do !i from 1 to !this.lst2.val.size()
+       if !i.eq(!this.lst2.val.size()) then
+         !lst2 = !lst2 & !this.lst2.selection()[$!i] & |'|  
+       else
+         !lst2 = !str & !this.lst2.selection()[$!i] & !or
+         !str = !lst2
+       endif
+     Enddo         
+  endif
+    
+  else
+ !!alert.message('Please select Disciplines')
+ !lst2 = ''
+ endif
+ 
+ if not unset(!this.lst3.val) then
+  !xstr = |purp eq '|   
+  if !this.lst3.val.size().eq(1) then
+  !lst3 = !xstr & !this.lst3.selection()[1] & |'|
+   -- q var !lst3
+  else
+  !xstr = |purp eq '| 
+  !or = |' or purp eq '|
+   Do !i from 1 to !this.lst3.val.size()
+     if (!i.eq(!this.lst3.val.size())) then
+      !lst3 = !lst3 & !this.lst3.selection()[$!i] & |'|  
+      else
+      !lst3 = !xstr & !this.lst3.selection()[$!i] & !or
+         !xstr = !lst3      
+     endif
+    Enddo
+  endif
+  else 
+ !!alert.message('Please select Status of Model')
+ !lst3 = ''  
+ endif
+
+  if not unset(!this.lst1.selection()) and not empty(!lst2) and not empty(!lst3) then
+  !!BAFGenRVM(!this.lst1.selection(),!lst2,!lst3,!this.studtog.val,!this.opt1.val,!this.opt2.val,!this.tog1.val,!this.Versn)
+ endif
+endmethod
+
+define method .BAFReview()
+-- Selection method
+
+-- !this.volce.callback = '!this.setup(!!ce)'
+-- !this.volceown.callback = '!this.setup(!!ce.owner)'
+ --- !this.fra1.callback = '!this.TormOne(!this.fra1.val)'
+
+  -- !this.fra1.val = 1
+  --!this.rtog1.val = true
+  var !puser evar pdmsuser
+  ---!puser = 'c:\temp\'
+  var !picode proj id  
+  var !pcode proj code
+  -- !xdir = !puser & !pcode
+    !xdir = |C:\Temp\Barossa|
+   -- !this.txt1.val = !xdir
+
+ !lsthead = 'Select'
+
+   !this.lst1.setHeadings(!lsthead)
+   !this.lst2.setHeadings(!lsthead)
+   !this.lst3.setHeadings(!lsthead)      
+
+ !dtext = 'Off Solid 12% 25% 50% 75% 87%'
+ !navi = '2015,2017,2019,2020'
+
+ !this.opt1.dtext = !dtext.split()
+ !this.opt2.dtext = !dtext.split()  
+ --!this.opt3.dtext = !navi.split(',') 
+ !this.fpath = |C:\Temp\Barossa|
+
+ var !xSite collect all site with not unset(:MOD)
+!xSite = !!CollectAllFor('site','not unset(:mod)',world)
+!xnames = !xSite.evaluate(object BLOCK('!xSite[!evalIndex].:mod.string()'))
+!xfunc = !xSite.evaluate(object BLOCK('!xSite[!evalIndex].func.string()'))
+!xpurp = !xSite.evaluate(object BLOCK('!xSite[!evalIndex].purp.string()'))
+
+ !uniqmod = !xnames.unique()
+ !uniqfun = !xfunc.unique()
+ !uniqpur = !xpurp.unique() 
+
+!this.lst1.dtext = !uniqmod
+-- !this.lst2.rtext = !rdis.split(',')
+-- !this.lst2.dtext = !ddis.split(',')
+-- !this.lst3.dtext = !uniqpur
+--!this.opt3.val = !navi.split(',')[1] 
+
+endmethod
+
+
+define method .Xopn(!chek is string)
+ SYSCOM |start $!chek|
+endmethod
