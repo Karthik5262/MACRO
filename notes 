@@ -1,0 +1,499 @@
+
+Search
+Skip to content
+MACROS, PML macroses
+My Notebook( PML & C# & MS commands)
+February 23, 2016  PDMS customizing
+
+Get Description for UDA:
+!sUDADesc = ‘:Paste here your UDA Name’
+!sUDAHash = object attribute(!sUDADesc)
+!rUDAName = !sUDAHash.hash()
+!sUDAValue = !!ce.attribute(!sUDADesc) 
+var !UVALIDDesc eval DESC for all UDA MEM with (UKEY of OWNE eq $!rUDAName AND UVVAL eq !sUDAValue)
+q var !UVALIDDesc[1]
+
+Export RVM:
+REPRESENTATION CABLE OBST ON    $* Show Cable Tray Reserve Volume
+EXPORT REPR ON                                       $* Turn On Transparency 
+
+Isodraft page count:
+var !number isodraw plotfile 1 number
+
+Set clash settings:
+TOUCH GAP 0.2
+IGNORE TOUCHES
+IGNORE CONNECTIONS
+NOCHECK WITHIN BRAN
+COLOUR OBST BLUE
+
+Get wall thickness:
+
+STR(ATTRIB PWALLT(1))
+
+ATTRIB SCHED
+
+Get Schedule in DTXR:
+
+PART ( STR ( ATTRIB WTEREF 3 ) , 2 , ‘-‘ )
+
+Track all modules:
+
+  track |CATACE| call |!this.track()|
+  track |PROPCE| call |!this.track()|
+  track |PADDCE| call |!this.track()|
+  track |DESICE| call |!this.track()|
+  track |SCHECE| call |!this.track()|
+  track |ISODCE| call |!this.track()|
+Round up to nearest 5mm:
+
+(INT( PARA 1 / 5) + 1) * 5
+
+Collect systems
+
+!network = CONNECTIONSH
+
+MS Word first page number if number pages is more than 1:
+
+{ IF {={ NUMPAGES } -1} = 1 “” “1” }
+
+Convert HashTable to Dictinary with array that is inside with splitter “-“:
+
+KeyTable.Cast().ToDictionary(k => k.Key.ToString(), v => v.Value.ToString()).OrderBy(v => v.Value). ToDictionary(k => k.Key, v => v.Value.Substring(v.Value.IndexOf(“-“) + 1, v.Value.Length – v.Value.IndexOf(“-“) – 1))
+
+Find closest panel downwards:
+
+Q CLOSEST PANEL DIRECTION DOWN
+
+MS Word command execution:
+
+Application.DocumentManager.MdiActiveDocument.SendStringToExecute(sListlogPath, true, false, true);
+
+Dont remember:
+
+DependencyResolver.GetImplementationOf().Commands.Add(…);
+
+Thread.CurrentThread.CurrentCulture = new CultureInfo(“en-US”);
+
+NEW SITE /xyz DB ABCD/ABCD
+
+PDMS Admin list update:
+
+!!ADMINELEM.update(!!ADMINELEM.type.selection(‘rText’))
+
+Show PDMS forms:
+
+!!fmSys.forms() *$ all
+!!fmSys.shownForms() *$ shown
+
+Name of PDMS commandline form:
+
+_cadcBth
+
+alpha request clear
+
+Evaluation in PDMS:
+
+VAR !ESTP eval stvnum ( /EQUIP/PROGRESS ) for all from !EQUI ignore any |na|
+
+var !A eval name for all from !BrconItems
+
+var !projcode proj code q var !!evar( ‘$!projcode’ + ‘000’) $* 8192
+
+где xxx – выражение на PML1, например ALL BOX WHERE (XLEN + 10) FOR /MYSITE или ALL BRANCH MEMBERS FOR /MYBRANCH
+
+var !InstInLimits coll ALL WITHIN E1790684N1540775U32500 TO E1859057N1651425U41500
+!InstInLimits = !InstInLimits.intersect(!!PdmsNameArray)
+
+var !q collect all db with ( dbtype eq ‘CATA’ ) will collect all cata db
+
+!!ce.para[7] = propre cwei of $!!ce.geodep[1]
+
+q mem ccorse of owne of catref
+
+var !u user q user $!u desc
+
+q all ulogid
+
+mcount eq 0
+
+( ‘Труба ‘ + :SDES OF CMPR OF SPRE  )
+
+q psatts
+
+‘ATTLIS’,’AHLIST’,’HLIS’,’LLIS’,’OLIS’,’LIST’,’OWNLST’,’OHTYPE’
+‘PPLS’,’PPVI’,’PPCOU’,’PLREFS’,’DDES’,’WDES’
+‘TRANS’,’WTRANS’,’GMOF’,’NMOF’,’EVOL’,’LVOL’,’WVOL’
+
+TEXIST
+
+q var !!realFmt
+
+q DBDEP
+
+PML STATISTICS
+
+!!commandMenu()
+
+Q DTXR OF MTOR NUM 2
+
+What to do when someone expunged you:
+
+Please quit. Before quitting you
+can use the “ALPHA FILE /filename” and “OUTPUT WORLD MEMBERS CHANGES”
+
+Some formula in PDMS:
+
+Q 3.14 * AVRADIUS / 2
+
+TANF L ANG = L * TAN(ANG / 2)
+
+Delete element in PDMS:
+
+delete $!!ce.type
+
+Delete all members for CE :
+
+delete $!!ce.type memb
+
+Select menu in PDMS:
+
+!!APPDESMAIN.coreViewSettings.SETFIELDPROPERTY(‘V_TTIP’, ‘SELECTED’ , TRUE) !!APPDESMAIN.coreViewSettings.SETFIELDPROPERTY(‘V_TTIP’, ‘SELECTED’ , FALSE) q var !!APPDESMAIN.coreViewSettings.fieldproperty(‘V_TTIP’ , ‘SELECTED’)
+
+q var !!APPDESMAIN.coreSelectMenu.fieldproperty(‘S_FHMO’ , ‘SELECTED’)
+
+Visio functions:
+
+DOCMD(1077)
+
+SETF(“TxtAngle”,”0 deg”)
+
+LOOKUP(Prop.CulcIsoMeth,Prop.CulcIsoMeth.Format)
+
+=A1&CHAR(10)&B1
+
+
+=PNTX(LOCTOPAR(PNT(Sheet.81!Connections.O2.X,Sheet.81!Connections.O2.Y),Sheet.81!EventXFMod,EventXFMod))+-9 mm
+
+Connection between Visio and Diagrams:
+
+_058=: – visio > UDA
+
+Use Synonyms in PDMS:
+
+!!runSynonym(‘CALLIB …’)
+
+PML expression:
+
+!gphAutoColourCol = object COLOUR( ‘:UDA-COLOUR ‘)
+
+Find type of object in PDMS:
+
+q var !!CE.Attribute(‘name’).ObjectType().Eq(‘STRING’)
+
+!anytemp = !!CE.Attribute(‘desc’)
+q var !anytemp.ObjectType()
+
+Rotate 3D View in PDMS:
+
+do !x from 0 to 360 by 22.5
+
+!!gphViews.look(!!gph3Ddesign1.view, S $!x E35D)
+
+pause 0.05
+
+enddo
+
+Choose element from Spec:
+
+choose SPec /SPEC WITH STYPE ‘STYPE’
+
+Include across DB:
+
+INCLUDE ACROSSDB /Name_Of_Object
+
+Get variable in C# from PDMS:
+
+string textpanel = command.GetPMLVariableString(“TEXTPANEL”)
+
+Using inset:
+
+if !!ce.type inset(‘VIEW’,’SHEE’,’DRWG’) then
+
+( ATTRIB ICLASS INSET ( ‘CONTROL’ , ‘POWER’ ) )
+
+Draft expression:
+
+Btext ‘#HPOSU+(Pm:1)’
+
+Update 3D view to drawlist limit:
+
+!volume = object VOLUME(!!gphdrawlists.drawlists[1].members()) !!gphViews.limits(!!gphviews.views[1], !volume)
+
+Available to edit:
+
+http://188.120.227.81/forum/index.php?showtopic=414&st=0&p=2978&hl=unset&fromsearch=1
+
+C# expression eval:
+
+if (!myEle.GetValidDouble(ATT_XLEN,length)) { // handle error in some way }
+
+DbExpression expr = DbExpression.Parse(“DIAM OF PREV + 2”);
+double dval;
+
+ele.IsAttributeValid(DbAttributeInstance.SPREF)
+
+DbExpressin dbexp = DbExpresion.Parse(“(SUBSTR(NAMN OF SITE,1,3))”);
+elem.EvaluateString(dbexp);
+
+Delegate in C# for PDMS:
+
+public event PMLNetDelegate.PMLNetEventHandler DateSelected; //Наш эвент, проброшенный в ПМЛ
+
+Sorting in PML:
+
+!Indices = !bb.sortedindices()
+
+!a.reindex(!Indices)
+
+Eval expression:
+
+!expression = object EXPRESSION(|NAME OF ZONE|)
+!strZone = !expression.evaluate(!element)
+
+
+Collect elements in Draft:
+
+VAR !struForGlab VSCAN FOR ALL ( STRU ) IN CE
+
+Find PML macro path:
+
+!!pmldefinition( ‘comgotoref’)
+
+!!pml.getpathname(‘youfile-from-pmllib’)
+
+3D Catalogues:
+
+http://www.witzenmann.at/witzenmann/wia/engineering/flexperte_download.php?PHPSESSID=24fe0124250f4d2b4753af49b32c60e8
+
+Plot dxf to plt:
+
+1. Save as the (.dwg) to (.dxf) ex: TEST.DXF and put it into C:\AVEVA\Pdms11.6.SP3\plot folder (make sure the file dformd.dll is located at same folder) 2. Use Command Prompt to type the below command (the bold text) c:\Documents and setting> CD.. c:\> CD AVEVA c:\AVEVA> CD PDMS11.6.sp3 c:\AVEVA\CD PDMS11.6.sp3> CD PLOT c:\AVEVA\CD PDMS11.6.sp3\PLOT> PLOT …
+
+Run acad lisp:
+
+acad.lsp
+(command “netload” “C:\\Program Files\\ArcGIS for AutoCAD 300\\ArcGISForAutoCAD”)
+
+Find selection in PDMS:
+
+!sel = object SELECTION()
+
+!sel.getcurrent()
+
+!s = !sel.getselection()
+
+q !s
+
+Delete selection in PDMS:
+
+!sel = object SELECTION()
+!sel.getcurrent()
+!s = !sel.getselection()
+do !sVal values !s
+$!sVal
+handle any
+elsehandle NONE
+delete $!!ce.type
+endhandle
+enddo
+
+Selected sheet in Draft:
+
+!!appDraMain.sheet
+
+Turn on rotate mode in PDMS 3D:
+
+!!gphAlwaysRotate(!!gph3ddesign1.view, !!ce)
+
+Select PDMS Appliction:
+
+!!appxload(‘DES’, ‘GEN’, false)
+
+Create collection in PML .NET:
+
+DbCollection coll; PdmsMessage error; DbCollection.Parse(“xxx”, out coll, out error);
+
+Find relative position:
+
+!newPos = object position(ce) !newPosWrt = !newPos.Wrt(/NeededElement)
+
+Execute C# in PML:
+
+import ‘PDMSCommands’
+handle ANY
+endhandle
+
+using namespace ‘Aveva.Pdms.Presentation.PDMSCommands’
+
+!commandManager = object PMLNETCOMMANDMANAGER()
+!commandManager.executeCommand(‘AVEVA.NewExplorer’)
+
+Run C# PML.net:
+
+IMPORT PMLNetClass
+
+USING NAMESPACE Aveva.Pdms.Examples
+
+!calcObj = object PMLNetClass()
+
+!calcReceiver = object netcallback() !handle =
+
+!calcObj.addeventhandler(‘PMLNetClassEvent’, !calcReceiver, ‘callback’)
+
+! calcObj.Calculate(2,2)
+
+
+How to create selection in DRAFT:
+
+раз форму вызывается через создание объекта
+то от вас требуется
+в с# создать нового делегата PmlNetEventHandle
+создать евент на кнопке которы при запуске будет вызывать так же и вашего делегата
+в pml при создании обьекта вешаете свою функцию при нажатие на кнопку
+а в функции пмл пишете требуемый вам xypos
+всё должно работать
+
+Find in DRAFT:
+
+var !res FIND $!element in $!view
+
+var !q VSCAN FOR ALL VALV
+
+How to decript PDMS names:
+
+IF CDC in the name of the form then: F – for FORM file name, for I – Initialise macro file name, M – file with macros executed by form
+
+Path to file tha execute after entering to modules:
+
+%PDMSUI%\des\admin\vars
+
+Change PDMS type to other:
+
+changetype TO FLAN
+
+Change text in ISODRAFT:
+
+Attexts ( DTXS + DTXR) ON VALV
+
+BOLT Length in PDMS:
+
+Q P1 BOLT1 BLEN
+
+Modfy model editor state:
+
+!modelEditor = object STATE()
+
+!modelEditor.modifymode(true)
+
+Use condition in Paragon:
+
+Xtext ( iftrue( bef ( name of pipe, ‘-‘ ) eq ‘/204’, ‘сталь 09Г2С’, ‘сталь 17Г1С’ ) )
+
+(iftrue (Pritype EQ ‘EQUI’, NAME OF OWNER , iftrue (Pritype EQ ‘PIPE’, Ttext OF Detref , ‘ NEITHER PIPE OR EQUI ‘)))
+
+Create AIDs in PDMS:
+
+AID TEXT NUM 102010 |Super Text| AT bla bla bla
+
+Coordinates of Bottom\Top:
+
+!topOfSteel = !!ce.wvolume[6]
+!botOfSteel = !!ce.wvolume[3]
+
+Some mac:
+
+!!aidConstructors = object aidConstructors()
+aid clear all
+!sube = !!ce
+
+var !pin1pos pin1pos
+!pos1 = object position(!pin1pos)
+
+var !pin2pos pin2pos
+!pos2 = object position(!pin2pos)
+
+!plane1 = !sube.position.plane(!pos1,!pos2)
+
+!!aidConstructors.add(!plane1)
+!radius = !pos1.line(!sube.position)
+
+!arc1 = object arc(!sube.position, !plane1.orientation, 0,90,!radius.length(),true)
+!arc1 = !arc1.Startposition(!pos2)
+!arc1 = !arc1.EndPosition(!pos1)
+!!aidConstructors.Add(!arc1)
+
+!arc2 = object arc(!sube.position, !sube.orientation, 0,90,!radius.length(), true)
+!arc2 = !arc2.Startposition(!pos2)
+!arc2 = !arc2.EndPosition(!pos1)
+!!aidConstructors.Add(!arc2)
+q var !arc1
+
+Check for difference in spref and lstube:
+
+var !a eval (name + ‘ ‘ + name of spref  + ‘ ‘ + name of lstube) for all (bran mem) with( type ne ‘TUBI’ and name of spec of spref ne name of spec of lstub ) for ce
+
+TTY Mode CommandLine arguments(Monitor)
+Switching Text Output:
+TRACE OFF – Stops the automatic output of attribute data.
+TRACE ON – Restarts automatic output of Current Element name and attributes.
+Device Mode:
+DEVICE NOGRAPHICS No graphics output
+DEVICE GRAPHICS Graphics output as normal.
+
+
+Admin include query:
+q projid
+
+When Created element:
+
+!hist = hist
+!hist.invert()
+q sessdate $!hist[1]
+
+Mark CE Name:
+
+MARK WITH ( NAMN ) CE
+
+Environment variables:
+
+CAF_ADDINS_PATH
+
+CAF_UIC_PATH
+
+To find sequence by type : q tyseq
+
+Collect using PML2:
+
+!COLL = !!COLLECTALLFOR(” , ” , CE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
