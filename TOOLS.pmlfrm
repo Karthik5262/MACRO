@@ -64,16 +64,78 @@ setup form !!tools dialog dock left
  button .gta'GTWORK' tooltip 'Getwork CE' call |!this.gtra()| width 10 at xmin.Rels ymin+1
  button .Aidce'AIDCE' tooltip 'AID CE ARROW' call |!this.Aidce()| width 5
  button .linespl'ISOSPLIT' tooltip 'ISOMETRIC LINE SPLIT' call |!this.Linespllitatta()| width 10
- button .Coll'COLLECT' tooltip 'ISOMETRIC LINE SPLIT' call |!this.Linespllitatta()| width 10
+ button .Coll'COLLE' tooltip 'ISOMETRIC LINE SPLIT' call |!this.collections()| width 5
  
  button .pra'PRA' tooltip 'PRACTIES' call |!this.pra()| width 10 at xmin.rels ymin+1
  button .pra1'PRA-1' tooltip 'PRACTIES' call |!this.pra1()| width 10 at xmin.rels ymin+1
- --button .pra3'PRA-3' tooltip 'PRACTIES' call |!this.pra3()| width 10 at xmin.rels ymin+1
+ button .pra3'PRA-3' tooltip 'PRACTIES' call |!this.clash()| width 10 at xmin.rels ymin+1
+ 
+ exit
+ 
+ frame .front6 foldup |COLOUR| at xmin.front5 ymax width 20 height 5
+ 
+ button .red'RED' Tooltip 'ce element red colour' call |Enhance ce colour red|
+ button .Brown'BROWN' Tooltip 'ce element Brown colour' call |Enhance ce colour Brown|
+ button .white'WHITE' Tooltip 'ce element white colour' call |Enhance ce colour white|
+ button .unen'UNHALL' Tooltip 'unenhance all' call |unEnhance all|
  
  Exit
  
+ -------------------------------------------------------
+ Define method .clash()
+ 
+ !mod = 'M0C'
+ !fileclashpipe = 'C:/TEMP/PIPE-CLASH.txt'
+ !clashobject = object file(!fileclashpipe)
+ !clashfileread = !clashobject.readfile()
+ 
+ Do !reportpipe from 1 to !clashfileread.size()
+     --!userm = USERM 
+	 --!pipes = array()
+	 !pipeclas = !clashfileread[!reportpipe]
+	 
+	enddo
+	 
+	 --!strClashes = 'C:/TEMP/Repoprt.csv'
+	 
+	 DESCLASH
+ OVERRIDE ON
+ REMOVE OBST All
+--some setting
+ NOCHECK WITHIN BRAN
+ IGNORE CONNECTIONS
+ IGNORE TOUCHES
+ 
+ if undefined(!!avaclasherui) then
+   pml load form !!avaclasherui
+	SHOW !!avaclasherui
+Elseif !!avaclasherui.shown() Eq F then
+	SHOW !!avaclasherui
+Endif
+	 
+	 !nam = 'M0C_clashes.xls'
+	 
+	!!avaclasherui.findClashes(!checkelems)
+	!!avaclasherui.getResults()
+	!!avaclasherui.displayClashes()
+	!Path = object file|'%AVEVA_DESIGN_USER%\$!nam'|
+	!!avaclasherui.dbctrl.SAVEGRIDTOEXCEL(!path.pathname() + '\' + !path.entry())
+	
+	!!alert.message('clash report completed...')
+	
+	
+	
+	 
+    --!pipclh = !clashfileread[!reportpipe]
+	--!!avaclasherui.findClashes(!pipclh)
+	--!!avaclasherui.getResults()
+	--!!avaclasherui.displayClashes()
+	
+ 
+ endmethod
+ 
 -------------------------------------------------------------- 
- Define method .pra3()
+ Define method .collections()
  
  !filename = 'C:/TEMP/PIPE.txt'
  
@@ -82,7 +144,7 @@ setup form !!tools dialog dock left
  
  Do !pip from 1 to !filecontent.size()
     !piptmp = !filecontent[!pip]
-    $p $!piptmp 
+     $!piptmp temp 50degc
  enddo
   
  -- $p $!pip
@@ -147,7 +209,13 @@ endmethod
 ---------------------------------------------------------------------------------
  Define method .pra()
  
+do !x from 0 to 360 by 20.5
 
+!!gphViews.look(!!gph3Ddesign1.view, S $!x E35D)
+
+pause 0.05
+
+enddo
 
  --!Width = !!alert.input('set width','')
  --!height = !!alert.input('set heigth','')
