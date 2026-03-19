@@ -1,0 +1,36 @@
+--------------------------------------------------------------------------------------------------
+-- By Manish Kokje
+-- Copywirte Toyo Engineering India Pvt. Ltd.
+-- function used whether Two Colume Members are clashing with Each other or not.
+-- Fucntion give reply in String "NO CLASH" or "CLASH"
+--------------------------------------------------------------------------------------------------
+
+define function !!checkClashType01(!fObjFrom is POSITION, !fObjTo is POSITION, !sObjFrom is POSITION, !sObjTo is POSITION) is STRING
+ !clashResult = 'NO CLASH'
+ !fFromEast   = !fObjFrom.East
+ !fFromNorth  = !fObjFrom.North
+ !fFromUp     = !fObjFrom.Up
+ !fToEast     = !fObjTo.East
+ !fToNorth    = !fObjTo.North
+ !fToUp       = !fObjTo.Up
+ !sFromEast   = !sObjFrom.East
+ !sFromNorth  = !sObjFrom.North
+ !sFromUp     = !sObjFrom.Up
+ !sToEast     = !sObjTo.East
+ !sToNorth    = !sObjTo.North
+ !sToUp       = !sObjTo.Up
+ 
+ --Check Vetically Member is passing through Borrom corner of Horizontal Panel
+ if (!sFromUp LE !fFromUp And !sToUp GT !fFromUp ) Then
+   if (!sFromEast GT !fFromEast And !sFromEast LT !fToEast And !sFromNorth GT !fFromNorth And !sFromNorth LT !fToNorth ) then
+    !clashResult = 'CLASH'
+  elseif (!sToEast GT !fFromEast And !sToEast LT !fToEast And !sToNorth GT !fFromNorth And !sToNorth LT !fToNorth ) then
+    !clashResult = 'CLASH'
+  elseif (!sFromEast GT !fFromEast And !sFromEast LT !fToEast  And !sToNorth GT !fFromNorth And !sToNorth LT !fToNorth ) then
+    !clashResult = 'CLASH'
+  elseif (!sToEast GT !fFromEast And !sToEast LT !fToEast And !sFromNorth GT !fFromNorth And !sFromNorth LT !fToNorth ) then
+    !clashResult = 'CLASH'
+  endif
+ endif
+ Return !clashResult
+endfunction
