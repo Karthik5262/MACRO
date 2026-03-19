@@ -1,0 +1,174 @@
+-----------------------------------------------------------------------
+--  (c) Copyright 2007 to Current Year Toyo Enginnering Corporation
+--  
+--  Macro : DesClash.pmlmac
+--  Revision : 0.1
+--  Author : KoKi Inoue
+--  Last modified by $Author : 
+--  
+------------------------------------------------------------------------
+
+--  $m/DesClash.pmlmac all   <- All pipe in TEC ALL WBS
+--  $m/DesClash.pmlmac 16120 <- All pipe in WBS
+--  $m/DesClash.pmlmac ce    <- ce only
+--  $m/DesClash.pmlmac       <- ce only
+--  
+--  map build new mdb
+--  
+define function !!DesClashChCe(!cu is dbref)
+ONERROR GOLABEL /ERROR0
+
+-- !cu = !!ce
+
+$(
+if upcase('$1') eq 'CE' or '$1' eq '' then
+  if !!ce.type eq 'PIPE' or !!ce.type eq 'ZONE' or !!ce.type eq 'SITE' then
+  else
+    pipe
+    handle(2,111)
+      !!alert.message('Please check ce.')
+      return
+    endhandle
+    --  (2,111)   Cannot access element type PIPE from the level
+  endif
+  !site[1] = !!ce
+elseif upcase('$1') eq 'ALL' then
+  !site = !!collectallfor(|site|,|match ( desc , 'TEC' ) eq 1 and ( purp eq 'PIP' or purp eq 'UND' )|,world)
+else
+  !site = !!collectallfor(|site|,|match ( name , '$1' ) ge 1|,world)
+endif
+
+do !i index !site
+
+  $!site[$!i]
+  !pipe = !!collectallfor(|pipe|,||,ce)
+
+  do !ii index !pipe
+
+    $!pipe[$!ii]
+$)
+
+$!cu
+
+-- $P $!cu
+
+    desclash
+
+      --  obst all
+      !name = !cu.namN.replace('"','').replace('/','_')
+      -- /$!name
+      alpha log /C:\temp\bwo\Clash-Check\ClashLog_$!name$n.txt over
+      handle(61,276)
+        alpha log /ClashLog$!name$n.txt over
+      endhandle
+--  (61,276)  Cannot open log file - DNF:Directory not found
+
+ONERROR GOLABEL /ERROR1
+
+      --  check ce
+      --  handle(69,85)
+      override on
+
+      autolimits ce
+      var !limits clash limits
+      var !limitssplit split(!limits)
+      var !clearance clash clearance
+      var !touchinggap clash touching gap
+      !space = real(!touchinggap) + real(!clearance ) + 100
+
+-- from East
+      if !limitssplit[1] eq 'E' then
+        !limitssplit[2] = string(real(!limitssplit[2]) - !space)
+      elseif !limitssplit[1] eq 'W' then
+        !limitssplit[2] = string(real(!limitssplit[2]) + !space)
+      endif
+-- from North
+      if !limitssplit[3] eq 'N' then
+        !limitssplit[4] = string(real(!limitssplit[4]) - !space)
+      elseif !limitssplit[3] eq 'S' then
+        !limitssplit[4] = string(real(!limitssplit[4]) + !space)
+      endif
+-- from Up
+      if !limitssplit[5] eq 'U' then
+        !limitssplit[6] = string(real(!limitssplit[6]) - !space)
+      elseif !limitssplit[5] eq 'D' then
+        !limitssplit[6] = string(real(!limitssplit[6]) + !space)
+      endif
+-- to East
+      if !limitssplit[8] eq 'E' then
+        !limitssplit[9] = string(real(!limitssplit[9]) + !space)
+      elseif !limitssplit[8] eq 'W' then
+        !limitssplit[9] = string(real(!limitssplit[9]) - !space)
+      endif
+-- to North
+      if !limitssplit[10] eq 'N' then
+        !limitssplit[11] = string(real(!limitssplit[11]) + !space)
+      elseif !limitssplit[10] eq 'S' then
+        !limitssplit[11] = string(real(!limitssplit[11]) - !space)
+      endif
+-- to Up
+      if !limitssplit[12] eq 'U' then
+        !limitssplit[13] = string(real(!limitssplit[13]) + !space)
+      elseif !limitssplit[12] eq 'D' then
+        !limitssplit[13] = string(real(!limitssplit[13]) - !space)
+      endif
+
+-- setting limits
+      !sTemp = ''
+      do !iii index !limitssplit
+        !sTemp = !sTemp + ' ' + !limitssplit[!iii]
+      enddo
+      limits $!stemp wrt world
+
+--  setting
+      report header off
+
+--  default
+      report obstr off
+      report main on
+
+--  setting
+      report position world
+      report ref on
+      report number on
+
+--  default
+      report first
+      report primary off
+      report significant off
+      report summary on
+      report approved off
+
+--  setting
+      report graphics off
+
+--  print pipe name
+      write |PIPE $!cu.name|
+
+--  clash Check Ce
+      check ce
+      --  endhandle
+      --  (69,85) Clasher run may not be made unless the override option is used.
+      alpha log end
+
+    exit
+
+  -- enddo
+
+-- enddo
+
+--  $!cu
+
+LABEL /ERROR0
+handle ANY
+  RETURN ERROR
+endhandle
+
+LABEL /ERROR1
+handle ANY
+  exit
+  alpha log end
+  RETURN ERROR
+endhandle
+
+endfunction
