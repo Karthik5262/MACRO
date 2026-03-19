@@ -1,0 +1,215 @@
+--    	Keyword		:   abClashSurf.pmlfrm
+--    	Module		:   Design
+--  	Author		:   abMirza
+--  	Created		:   10/09/2018
+--  	Description	:	Surfing the Clash Report
+--		Version 	:	1.0
+--		Last User 	:	abm
+------------------------------------------------------------------------
+import 'GridControl'
+handle any
+endhandle
+
+setup form !!abClashSurf dialog dock resize
+
+   -- using namespace 'Aveva.Pdms.Presentation'
+   using namespace 'Aveva.Core.Presentation'
+ 
+ 
+   member .grid     is NetGridControl
+   member .elements is ARRAY
+   member .array is ARRAY
+   button .Bworse 'Browse' call '!this.Bworse()'
+   paragraph.CEName  at xmax.Bworse+2 ymin text '                  ' 
+   path down
+	frame .selectFileFrame '' at xmin.Bworse anchor t+l+r width 72
+		container .gridFrame PmlNetControl 'grid' dock fill height 20
+	exit
+	
+	button .Apply 'Apply' at xmin.selectFileFrame Ymax+0.5 $* call '!this.apply()'
+	button .Dismiss 'Dismiss' at xmin.selectFileFrame+10 Ymin Cancel
+
+	menu .gridPopup popup
+   !this.gridPopup.add( 'CALLBACK', 'Add to 3D View', '!this.addToThreeDView()' )
+   !this.gridPopup.add( 'CALLBACK', 'Save to Excel...', '!this.saveToExcel()' )
+   !this.gridPopup.add('CALLBACK', 'Import from Excel...', '')   
+
+    member .arrFromListTxt is ARRAY
+    member .arrFromListUnique is ARRAY 
+    member .cldata is array    
+exit
+------------------------------------------------------------------------
+define method .abClashSurf()
+-- using namespace 'Aveva.Pdms.Presentation'
+  using namespace 'Aveva.Core.Presentation'
+  !this.grid = object NetGridControl()
+  !this.gridFrame.control = !this.grid.handle()
+  !this.grid.addeventhandler('OnPopup', !this, 'rightClickGrid')
+  --!this.grid.addeventhandler('AfterSelectChange', !this, 'afterSelectChange')
+  !this.formTitle = 'Clash Report Reader'
+  !this.initcall  = '!this.initialise()'
+endmethod
+------------------------------------------------------------------------
+define method .rightClickGrid(!cldata is ARRAY)
+  !this.gridFrame.popup = !this.gridPopup
+  !this.elements = !cldata
+  !this.gridFrame.showPopup(!cldata[0],!cldata[1])
+endmethod
+------------------------------------------------------------------------
+define method .addToThreeDView()
+$P Hi
+  ----do !i from 1 to (!this.elements.size())
+  ----q var !this.elements.size()
+      ----!d = !this.elements[!i]
+      ----!myDbref = object DBREF('$!d')
+      ----add $!myDbref
+      q var !this.elements
+  do !element values !this.elements.size()
+    $p $!element
+  enddo      
+  ---enddo
+endmethod
+------------------------------------------------------------------------
+define method .saveToExcel()
+   import 'PMLFileBrowser'
+   Handle Any
+   Endhandle
+   using namespace 'Aveva.Pdms.Presentation'
+   !browser = object PMLFileBrowser('SAVE')
+   !browser.show('C:\','GridControlExample.xls','Save Grid to Excel',false, 'Excel Documents|*.xls',1)
+   !this.grid.SaveGridToExcel(!browser.file())
+endmethod
+------------------------------------------------------------------------
+
+define method .initialise()
+
+	!data = ARRAY()
+
+   -- Create headings
+	!headings    = ARRAY()
+!heading = 'Status,Group,Clash,Discipline,Level,Type,Element 1,Discipline 1,GType 1,Element 2,Discipline 2,GType 2,Comments,User,East,North,Up,Priority Elem1,Priority Elem2,Class Elem1,Class Elem2,Date,REMARKS'	
+!headings = !heading.split(',')
+	--!headings[1] = 'Name'
+	--!headings[2] = 'Current Rev.'
+	--!headings[3] = 'Prepared By'
+	--!headings[4] = 'Checked By'
+	--!headings[5] = 'Approved By'
+	--!headings[6] = 'Description'
+	--!headings[7] = 'Date'
+
+	-- using namespace  'Aveva.Pdms.Presentation'
+        using namespace 'Aveva.Core.Presentation'	
+	!gdata = object NetDataSource('Grid Control Example', !headings, !data)
+	!this.grid.BindToDataSource(!gdata)
+
+	!this.grid.ColumnExcelFilter(TRUE)
+	!this.grid.OutlookGroupStyle(TRUE)
+	!this.grid.FixedHeaders(FALSE)
+	!this.grid.FixedRows(TRUE)
+	!this.grid.ColumnSummaries(TRUE)
+endmethod
+
+define method .Bworse()
+import 'PMLFileBrowser' 
+    handle any
+    endhandle
+using namespace 'Aveva.Core.Presentation'
+!browser = object PMLFileBrowser('OPEN')
+    !browser = object PMLFILEBROWSER('Open')  
+-- !browser.show('C:\','abc.DOC','My Browser',true, 'Word Documents|*.DOC',1)
+	!directory = ''
+    !seedFile = ''
+    !title = 'OPEN FILE'
+    !existFlag = FALSE
+	!filter = 'CSV Files (*.csv)|*.csv'
+    !filterIndex = 1
+	!arrDup = array()
+	!siteFunc = ''
+    !browser.show(!directory, !seedFile, !title, !existFlag, !filter, !filterIndex)
+    		            !Sum = 1
+$(
+         --if !browser.file().neq('') then
+		!fileF = object file(!browser.file())
+
+		!this.arrFromListTxt = !fileF.ReadFile()
+		!arrFromListsz = !this.arrFromListTxt.size()
+		-- q var !fileF !arrFromListTxt !arrFromListsz
+		!fileF.open('READ')
+
+		            !array = object array()
+		            !bb = object array(50000)		            
+		            !header[1] = 'Groups1'
+		            !header[2] = 'Groups2'
+		            !text = 'Head1,Head2'	
+		            !xtext = !text.split(',')	            
+	            		            
+         do  !x
+       -- !fileF.open('READ')
+        !Line = !fileF.ReadRecord()
+           if(!line.set())then
+           !LineArray[!x] = !line
+            !xline = !!LineArray[!x].split(',')
+                     do !y from 1 to !!LineArray[!x].size()
+                       !cldata[$!Sum][$!y] = '$!!LineArray[!x][$!y]'
+                       -- $P !cldata[$!Sum][$!y] $!cldata[$!Sum][$!y]
+
+                     enddo 
+                       !Sum = !Sum + 1
+              !array.append(!line)
+              -- !cldata[1].append(!xline[1])
+              --q var !line
+         else
+         break
+         endif
+        enddo
+	            
+$)
+-- !headerr = 'Status,Group,Clash,Discipline,Level,Type,Element 1,Discipline 1,GType 1,Element 2,Discipline 2,GType 2,Comments,User,East,North,Up,Priority Elem1,Priority Elem2,Class Elem1,Class Elem2,Date,REMARKS'
+-- !header = !headerr.split(',')
+		            --!header[1] = 'Groups1'
+		            --!header[2] = 'Groups2'	
+!steelFile = object file(!browser.file())
+	!steelFile.Open('READ')
+
+	do !x
+
+		!line = !steelFile.readRecord()
+		if !line.set() then
+			!steelFileArray[!x] = !line
+			            !header = !steelFileArray[1].split(',')
+			            !xline = !steelFileArray[!x].split(',')
+			--$P $!steelFileArray[$!x]
+                     do !y from 1 to !xline.size()
+                       !cldata[$!Sum][$!y] = '$!xline[$!y]'
+                       -- $P !cldata[$!Sum][$!y] $!cldata[$!Sum][$!y]
+
+                     enddo 
+                       !Sum = !Sum + 1			
+		else
+			break
+		endif
+	enddo
+	!steelFile.Close()	
+
+			            !Sum = 1             
+-- q var !cldata
+		--!fileF.close()   
+		--!this.grid.BindToDataSource(!array)   		
+		 -- q var !browser.file()    
+		--do !x from 1 to !arrFromListsz
+		 --$P $!arrFromListTxt[$!x]
+		--enddo
+ 	      --!this.gdtSiteLst.Clear()
+	      --!this.arrFromListUnique.Clear()
+              --!this.xgetArrayErrorTrap()
+              --!fileF.close()
+   --!browser = object PMLFileBrowser('OPEN')
+   --!browser.show('C:\','','Load Grid from Excel',true, 'Excel Documents|*.xls',1)
+   -- !this.grid.clearGrid()
+   using namespace 'Aveva.Core.Presentation'   
+   !nds = object NetDataSource('Grid Control Example',!header,!cldata)
+   !this.grid.BindToDataSource(!nds)              
+	--endif
+
+
+endmethod
