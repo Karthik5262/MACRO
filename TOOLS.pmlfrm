@@ -65,11 +65,12 @@ setup form !!tools dialog dock left
  button .Aidce'AIDCE' tooltip 'AID CE ARROW' call |!this.Aidce()| width 5
  button .linespl'ISOSPLIT' tooltip 'ISOMETRIC LINE SPLIT' call |!this.Linespllitatta()| width 10
  button .Coll'COLLE' tooltip 'ISOMETRIC LINE SPLIT' call |!this.collections()| width 5
+ button .copys'COPYTYP' tooltip 'COPY SAME COMPONENTS' call |!this.Copysame()| width 10 at xmin.gta ymin+1 
  
  button .pra'PRA' tooltip 'PRACTIES' call |!this.pra()| width 10 at xmin.rels ymin+1
  button .pra1'PRA-1' tooltip 'PRACTIES' call |!this.pra1()| width 10 at xmin.rels ymin+1
  button .pra3'PRA-3' tooltip 'PRACTIES' call |!this.clash()| width 10 at xmin.rels ymin+1
- 
+ button .repo'WITHIN' tooltip 'With in volume' call |!this.within()| width 10 at xmin.rels ymin+1
  exit
  
  frame .front6 foldup |COLOUR| at xmin.front5 ymax width 20 height 5
@@ -80,6 +81,70 @@ setup form !!tools dialog dock left
  button .unen'UNHALL' Tooltip 'unenhance all' call |unEnhance all|
  
  Exit
+ 
+ 
+ --------------------------------------------------------
+ define method .within()
+ 
+ 
+
+ !filename = 'C:/TEMP/REPORT.txt'
+ !fileobject = object file(!filename)
+ !filemake = !fileobject.readfile()
+ 
+ 
+ Do !pipreport from 1 to !filemake.size()
+    !piprep = !filemake[!pipreport]
+    var !repo collect all within vol $!piprep 100
+$p $!piprep
+
+
+!getarr = ARRAY()
+!getaddsize = !repo.size()
+!addsize = $!getaddsize + 1
+
+
+!row = 2
+
+
+do !b from 1 to !repo.size()
+      !getarr[$!row] = !repo[$!b]
+      !row = !row + 1
+   enddo
+
+
+
+
+!getdetails = ARRAY()
+Do !a from 2 to !getarr.size()
+$!getarr[$!a]
+!b = $!a - 1
+
+
+
+var !getmem ce
+!getmemtype = !!ce.name
+var !getmemSite Own of own 
+var !getmemowner own of Own of own
+
+
+!getarr[$!a] = '$!b' + '[' + '$!piprep' +']' + '[' + '$!getmem' + ']' + '[' + '$!getmemSite' + ']' +'[' + '$!getmemowner' + ']'
+
+
+  enddo
+ enddo
+
+ !getarr[1] = 'ITEM NO. [CURRENT ELEMENT] [COMPONENT NAME] [OWNER] [NEXT OWNER]'
+var !getdate clock date
+!repldate = !getdate.replace(' ','')  
+!getpath = 'C:\Temp\Piping_MTO_Report_AllScope_' + '$!repldate' + '.csv'
+!outreport = object FILE('$!getpath')
+!outreport.writefile('WRITE',!getarr)
+$P File saved successfully in $!getpath
+
+
+  
+ endmethod 
  
  -------------------------------------------------------
  Define method .clash()
@@ -115,21 +180,22 @@ Endif
 	 
 	 !nam = 'M0C_clashes.xls'
 	 
-	!!avaclasherui.findClashes(!checkelems)
+	--!!avaclasherui.findClashes(!pipeclas)
 	!!avaclasherui.getResults()
 	!!avaclasherui.displayClashes()
-	!Path = object file|'%AVEVA_DESIGN_USER%\$!nam'|
-	!!avaclasherui.dbctrl.SAVEGRIDTOEXCEL(!path.pathname() + '\' + !path.entry())
+	!Path = object file('%AVEVA_DESIGN_USER%/$!nam')
+	
+ return
+ 
+
+--enddo
+
+	
+	--!!avaclasherui.dbctrl.SAVEGRIDTOEXCEL(!path.pathname() + '\' + !path.entry())
 	
 	!!alert.message('clash report completed...')
 	
 	
-	
-	 
-    --!pipclh = !clashfileread[!reportpipe]
-	--!!avaclasherui.findClashes(!pipclh)
-	--!!avaclasherui.getResults()
-	--!!avaclasherui.displayClashes()
 	
  
  endmethod
@@ -142,9 +208,10 @@ Endif
  !fileobj = object file(!filename)
  !filecontent = !fileobj.readfile()
  
+ 
  Do !pip from 1 to !filecontent.size()
     !piptmp = !filecontent[!pip]
-     $!piptmp temp 50degc
+     $!piptmp temp
  enddo
   
  -- $p $!pip
@@ -153,42 +220,15 @@ Endif
  endmethod
  
 ---------------------------------------------------------------
-Define method .pra1()
+Define method .Copysame()
 
-  --!Paraname = para of N3
-  
-  ---$p $!paraname
-  
-  --define method .reordercomp()
+!tp = type 
+new $!tp copy same
 
- 
-!list = object LIST()
-!members = !!collect(all members)
- 
--- Filter out elements and store names/references
-do !x from 1 to !members.size() 
-    !name = !members[!x].name
-    !list.append(!name + '|' + !members[!x].string())
-enddo
- 
--- Sort the list alphabetically
-!list.sort()
- 
--- Apply the reorder
-do !x from 1 to !list.size()
-    !parts = !list[!x].split('|')
-    !ref = !parts[2]
-    
-    -- Move the element to the position of the current index
-    REORDER $!ref BEFORE $!x
-enddo
- 
-$P Reordering complete.
- 
 
 endmethod 
  
- --endmethod 
+ 
  ------------------------------------------------------------
  define method .Linespllitatta()
  
