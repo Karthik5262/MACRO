@@ -1,0 +1,28 @@
+------------------------------------------------------------------------
+-- Filename : rptAlteryxBOLTSPREF.pmlfnc
+------------------------------------------------------------------------
+define function !!rptAlteryxBOLTSPREF(!sFlnm is STRING, !iPPoint is REAL) is STRING
+--$P test starts
+
+!sWkFlnm = !sFlnm
+!oRef = !sWkFlnm.dbref()
+handle any
+	return ''
+endhandle
+if unset(!oRef) then
+	return ''
+endif
+--!!ce = !oRef
+
+var !iBoltTotal p$!iPPoint bolt total of $!sWkFlnm
+
+var !s1 p$!iPPoint bolt $!iBoltTotal spref of $!sWkFlnm
+handle any
+	return ''
+endhandle
+
+--$P test ends
+
+--$p $!s1
+return !s1
+endfunction
