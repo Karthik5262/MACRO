@@ -1,0 +1,40 @@
+------------------------------------------------------------------------
+-- Filename : rptAlteryxBTHK.pmlfnc
+------------------------------------------------------------------------
+define function !!rptAlteryxBTHK(!sFlnmE is STRING, !sFlnmB is STRING) is STRING
+--$P test starts
+
+!sWkFlnm = !sFlnmB
+!oRef = !sWkFlnm.dbref()
+handle any
+	return ''
+endhandle
+if unset(!oRef) then
+	return ''
+endif
+
+!sWkFlnm = !sFlnmE
+!oRef = !sWkFlnm.dbref()
+handle any
+	return ''
+endhandle
+if unset(!oRef) then
+	return ''
+endif
+
+var !s1 BTHK of $!sFlnmB
+handle any
+	return ''
+endhandle
+
+if unset(!s1) then
+	return ''
+endif
+
+!!ce = !oRef
+
+var !s2 $!s1
+
+--return '$!s1 : $!s2'
+return !s2
+endfunction
