@@ -1,0 +1,360 @@
+setup form !!NIScale size 20 7
+title 'EquiScale'
+!this.initcall   = '!this.ISLAM()'
+frame .columnsFrame ''   anchor all  at 0 0 
+   valign bottom
+   List .EquiList 'List of Equipment' at x0 y0 callback '!this.ListPick()'  width 25 height 11
+   vdist  0.05
+!menu = !this.newMenu('listPopup')
+!menu.add(|callback|, |Add CE...|, |!this.ADDCE()|)
+!menu.add(|callback|, |Add CE Member...|, |!this.Muslim()|)
+!menu.add(|callback|, |Rem CE...|, |!this.remove()|)
+!menu.add(|callback|, |Rem All...|, |!this.removeall()|)
+!menu.add(|callback|, |Reset Form...|, |!this.reset()|)
+!this.EquiList.setPopup(!this.listPopup)
+
+  button .c1 |Add Equi  | backg white at x0 y8.5 call '!this.Muslim()' 
+  button .c2 |Scale Equi| backg white at x0 y9.5 call '!this.Muslimat()' 
+  text .text1  'Scale ' at 15 8.5 width 4 is real
+  text.moves1  'Number' at 15 9.5 anchor B+L width 4 is REAL
+exit
+
+frame .syur 'Scale by Slider' at 29 0
+slider.slide1 vertical range 0 5 step 1 val 0 width 4 height 10
+member.store1 is real
+slider.slide2 at 8 0 vertical range 0 5 step 1 val 0 width 4 height 10
+member.store2 is real
+exit 
+---------------------------------------------------------------------------------
+define method .ISLAM()
+!this.slide1.callback = '!this.slide1Move('
+!this.moves1.val = 0
+!this.store1 = 0
+!this.text1.val = !this.slide1.val
+!this.slide2.callback = '!this.slide2Move('
+!this.moves1.val = 0
+!this.store2 = 0
+!this.text1.val = !this.slide2.val
+!this.moves1.active = false
+endmethod
+
+define method .Muslim()
+var !sfnd coll all equi for ce
+          var !sfname eval fullname for all from !sfnd
+          !this.EquiList.dtext = !sfname      
+endmethod
+
+define method .ListPick()
+!sele = !this.EquiList.SELECTION()
+!navi = !sele
+$!navi
+endmethod
+
+define method .reset()
+kill!!NIScale
+show!!NIScale
+endmethod
+
+define method .slide1Move(!gad is GADGET, !val is STRING)
+!this.text1.val = !gad.val
+!this.text1.refresh()
+if !val eq 'MOVE' then
+!this.store1 = !this.store1 + 1
+!this.Muslimat()
+elseif !val eq 'STOP' then
+!this.moves1.val = !this.store1
+!this.store1 = 0
+endif
+endmethod 
+
+define method .slide2Move(!gad is GADGET, !val is STRING)
+if !gad.val eq 1 then
+!this.text1.val = 1
+elseif !gad.val eq 2 then
+!this.text1.val = 0.5
+elseif !gad.val eq 3 then
+!this.text1.val = 0.3
+elseif !gad.val eq 4 then
+!this.text1.val = 0.25
+elseif !gad.val eq 5 then
+!this.text1.val = 0.2 
+else
+endif
+
+!this.text1.refresh()
+if !val eq 'MOVE' then
+!this.store2 = !this.store2 + 1
+!this.Muslimat()
+elseif !val eq 'STOP' then
+!this.moves1.val = !this.store2
+!this.store2 = 0
+endif
+endmethod 
+
+define method .Muslimat()
+!SCALE = !this.text1.val
+!CE = !!CE.NAME
+VAR !MEM COLL ALL (BOX CYLI PYRA NBOX NCYL NPYR CTOR NCTOR RTOR NRTOR SNOU NSNO EXTR NXTR DISH NDISH SLCY NSLC CONE NCON VERT NOZZ PANE REVO) FOR $!CE
+DO !I VALUE !MEM
+$!I
+VAR !TYPE TYPE
+IF (|$!TYPE| INSET (|NCYLI|,|NBOX|,|NCTOR|,|NXTRU|,|NPYRA|,|NDISH|,|NSLCY|,|NRTOR|,|NSNOU|,|NCONE|)) THEN
+VAR !E E WRT OWN
+HANDLE ANY
+ VAR !E 0
+ENDHANDLE
+VAR !N N  WRT OWN
+HANDLE ANY
+ VAR !N 0
+ENDHANDLE
+VAR !U U  WRT OWN
+HANDLE ANY
+ VAR !U 0
+ENDHANDLE
+VAR !E ($!E * $!SCALE)
+VAR !N ($!N * $!SCALE)
+VAR !U ($!U * $!SCALE)
+ENDIF
+----------------------------
+IF (|$!TYPE| INSET (|REVO|)) THEN
+
+VAR !E E WRT EQUI
+HANDLE ANY
+ VAR !E 0
+ENDHANDLE
+VAR !N N  WRT EQUI
+HANDLE ANY
+ VAR !N 0
+ENDHANDLE
+VAR !U U  WRT EQUI
+HANDLE ANY
+ VAR !U 0
+ENDHANDLE
+VAR !EP ($!E * $!SCALE)
+VAR !NP ($!N * $!SCALE)
+VAR !UP ($!U * $!SCALE)
+
+AT E$!EP N$!NP U$!UP WRT EQUI
+
+VAR !LOOP COLL ALL LOOP FOR $!I
+DO !K VALUES !LOOP
+$!K
+VAR !PAVE COLL ALL VERT FOR $!K
+DO !J VALUE !PAVE
+$!J
+VAR !E E WRT OWN
+HANDLE ANY
+ VAR !E 0
+ENDHANDLE
+VAR !N N  WRT OWN
+HANDLE ANY
+ VAR !N 0
+ENDHANDLE
+VAR !U U  WRT OWN
+HANDLE ANY
+ VAR !U 0
+ENDHANDLE
+VAR !E ($!E * $!SCALE)
+VAR !N ($!N * $!SCALE)
+VAR !U ($!U * $!SCALE)
+FRAD (FRAD * $!SCALE)
+AT E$!E N$!N U$!U WRT OWN
+ENDDO
+ENDDO
+ENDIF
+----------------------------
+IF (|$!TYPE| INSET (|PANE|)) THEN
+
+VAR !E E WRT EQUI
+HANDLE ANY
+ VAR !E 0
+ENDHANDLE
+VAR !N N  WRT EQUI
+HANDLE ANY
+ VAR !N 0
+ENDHANDLE
+VAR !U U  WRT EQUI
+HANDLE ANY
+ VAR !U 0
+ENDHANDLE
+VAR !EP ($!E * $!SCALE)
+VAR !NP ($!N * $!SCALE)
+VAR !UP ($!U * $!SCALE)
+
+AT E$!EP N$!NP U$!UP WRT EQUI
+
+VAR !PLOO COLL ALL PLOO FOR $!I
+DO !K VALUES !PLOO
+$!K
+HEIG (HEIG * $!SCALE)
+VAR !PAVE COLL ALL PAVE FOR $!K
+DO !J VALUE !PAVE
+$!J
+VAR !E E WRT OWN
+HANDLE ANY
+ VAR !E 0
+ENDHANDLE
+VAR !N N  WRT OWN
+HANDLE ANY
+ VAR !N 0
+ENDHANDLE
+VAR !U U  WRT OWN
+HANDLE ANY
+ VAR !U 0
+ENDHANDLE
+VAR !E ($!E * $!SCALE)
+VAR !N ($!N * $!SCALE)
+VAR !U ($!U * $!SCALE)
+FRAD (FRAD * $!SCALE)
+AT E$!E N$!N U$!U WRT OWN
+ENDDO
+ENDDO
+ENDIF
+----------------------------
+IF (|$!TYPE| INSET (|CYLI|,|BOX|,|CTOR|,|EXTRU|,|PYRA|,|DISH|,|SLCY|,|NOZZ|,|SNOU|,|RTOR|,|CONE|)) THEN
+VAR !E E WRT EQUI
+HANDLE ANY
+ VAR !E 0
+ENDHANDLE
+VAR !N N  WRT EQUI
+HANDLE ANY
+ VAR !N 0
+ENDHANDLE
+VAR !U U  WRT EQUI
+HANDLE ANY
+ VAR !U 0
+ENDHANDLE
+VAR !E ($!E * $!SCALE)
+VAR !N ($!N * $!SCALE)
+VAR !U ($!U * $!SCALE)
+ENDIF
+----------------------------
+VAR !TYPE TYPE
+
+$* VAR !NAME NAME
+$* $P |$!TYPE|
+$* $P |$!NAME|
+
+IF (|$!TYPE| INSET (|BOX|,|NBOX|)) THEN
+    XLEN (XLEN * $!SCALE)
+    YLEN (YLEN * $!SCALE)
+    ZLEN (ZLEN * $!SCALE)
+ENDIF
+IF (|$!TYPE| INSET (|CYLI|,|DISH|,|NCYL|,|NDIS|,|NSLC|)) THEN
+    HEIG (HEIG * $!SCALE)
+    DIAM (DIAM * $!SCALE)
+ENDIF
+IF (|$!TYPE| INSET (|NCON|,|CONE|)) THEN
+    DBOT (DBOT * $!SCALE)
+    DTOP (DTOP * $!SCALE)
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF (|$!TYPE| INSET (|PYRA|,|NPYR|)) THEN
+    XBOT (XBOT * $!SCALE)
+    YBOT (YBOT * $!SCALE)
+    XTOP (XTOP * $!SCALE)
+    YTOP (YTOP * $!SCALE)
+    XOFF (XOFF * $!SCALE)
+    YOFF (YOFF * $!SCALE)
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF (|$!TYPE| INSET (|SNOU|,|NSNO|)) THEN
+    DBOT (DBOT * $!SCALE)
+    DTOP (DTOP * $!SCALE)
+    XOFF (XOFF * $!SCALE)
+    YOFF (YOFF * $!SCALE)
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF (|$!TYPE| INSET (|CTOR|,|NCTO|)) THEN
+    RINS (RINS * $!SCALE)
+    ROUT (ROUT * $!SCALE)
+ENDIF
+IF (|$!TYPE| INSET (|RTOR|,|NRTO|)) THEN
+    RINS (RINS * $!SCALE)
+    ROUT (ROUT * $!SCALE)
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF(|$!TYPE| EQ |NOZZ|) THEN
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF(|$!TYPE| INSET (|SLCY|,|NSLC|)) THEN
+    XTSH (XTSH * $!SCALE)
+    YTSH (YTSH * $!SCALE)
+    XBSH (XBSH * $!SCALE)
+    YBSH (YBSH * $!SCALE)
+    DIA  (DIA * $!SCALE)
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF(|$!TYPE| INSET (|EXTR|,|NXTR|)) THEN
+    HEIG (HEIG * $!SCALE)
+ENDIF
+IF(|$!TYPE| EQ |VERT|) THEN
+    FRAD (FRAD * $!SCALE)
+ENDIF  
+IF (|$!TYPE| INSET (|CYLI|,|BOX|,|CTOR|,|EXTRU|,|PYRA|,|DISH|,|SLCY|,|NOZZ|,|SNOU|,|RTOR|,|CONE|)) THEN
+AT E$!E N$!N U$!U WRT EQUI
+ENDIF
+IF (|$!TYPE| INSET (|NCYLI|,|NBOX|,|NCTOR|,|NXTRU|,|NPYRA|,|NDISH|,|NSLCY|,|NRTOR|,|NSNOU|,|NCONE|)) THEN
+AT E$!E N$!N U$!U WRT OWN
+ENDIF
+
+ENDDO
+EQUI
+endmethod
+
+define method .ADDCE()
+!PIPERUN = !this.EquiList.DTEXT
+!INDEX = !this.EquiList.val
+!PNAME = NAME
+!PTYPE = upcase(!!ce.type)
+   handle any
+      !!alert.message('Please select one item.')
+      return
+   endhandle
+
+if !PTYPE EQ 'EQUI' THEN
+
+  IF !INDEX GT 0 THEN
+     handle any
+     endhandle
+     !PIPERUN.INSERT(!INDEX + 1,!PNAME)
+  ELSE
+     !PIPERUN.APPEND(!PNAME)
+  ENDIF
+ELSE 
+  !!alert.message('PLEASE SELECT EQUI ONLY.....!!!')
+ENDIF
+
+!PIPERUN.UNIQUE()
+!THIS.EquiList.DTEXT = !PIPERUN
+!THIS.EquiList.VAL = !INDEX + 1
+handle any
+endhandle
+endmethod
+
+define method .remove()
+   !INDEX   = !THIS.EquiList.VAL
+   !PIPERUN = !THIS.EquiList.DTEXT
+   !PIPERUN[!INDEX].DELETE()
+Handle (2,752)
+!!alert.message('No elements left....!!')
+endhandle  
+!THIS.EquiList.DTEXT = !PIPERUN
+endmethod
+
+define method .removeall()
+!THIS.EquiList.CLEAR()
+endmethod
+EXIT
+
+
+
+
+
+
+
+
+
+
+
+
