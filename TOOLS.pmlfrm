@@ -67,10 +67,12 @@ setup form !!tools dialog dock left
  button .Coll'COLLE' tooltip 'ISOMETRIC LINE SPLIT' call |!this.collections()| width 5
  button .copys'COPYTYP' tooltip 'COPY SAME COMPONENTS' call |!this.Copysame()| width 10 at xmin.gta ymin+1 
  
- button .pra'PRA' tooltip 'PRACTIES' call |!this.pra()| width 10 at xmin.rels ymin+1
+ button .earth'EARTHLIST' tooltip 'earthing lug tag number' call |!this.earthing()| width 10 at xmin.rels ymin+1
  button .pra1'PRA-1' tooltip 'PRACTIES' call |!this.pra1()| width 10 at xmin.rels ymin+1
  button .pra3'PRA-3' tooltip 'PRACTIES' call |!this.clash()| width 10 at xmin.rels ymin+1
- button .repo'WITHIN' tooltip 'With in volume' call |!this.within()| width 10 at xmin.rels ymin+1
+ --button .repo'WITHIN' tooltip 'With in volume' call |!this.within()| width 10 at xmin.rels ymin+1
+ --button .pra4'PRA-4' tooltip 'PRACTIES' call |!this.withinabc()| width 10 at xmin.rels ymin+1
+ 
  exit
  
  frame .front6 foldup |COLOUR| at xmin.front5 ymax width 20 height 5
@@ -83,69 +85,18 @@ setup form !!tools dialog dock left
  Exit
  
  
- --------------------------------------------------------
- define method .within()
- 
- 
+------------------------------------------------------
+Define method .earthing()
 
- !filename = 'C:/TEMP/REPORT.txt'
- !fileobject = object file(!filename)
- !filemake = !fileobject.readfile()
- 
- 
- Do !pipreport from 1 to !filemake.size()
-    !piprep = !filemake[!pipreport]
-    var !repo collect all within vol $!piprep 100
-$p $!piprep
+getwork PIPE/M0C-DES
+
+var !auto coll all atta with matchw(name,'*M0C-*-EL-*')
+var !name eval name for all from !auto
+q var !name 
+
+endmethod
 
 
-!getarr = ARRAY()
-!getaddsize = !repo.size()
-!addsize = $!getaddsize + 1
-
-
-!row = 2
-
-
-do !b from 1 to !repo.size()
-      !getarr[$!row] = !repo[$!b]
-      !row = !row + 1
-   enddo
-
-
-
-
-!getdetails = ARRAY()
-Do !a from 2 to !getarr.size()
-$!getarr[$!a]
-!b = $!a - 1
-
-
-
-var !getmem ce
-!getmemtype = !!ce.name
-var !getmemSite Own of own 
-var !getmemowner own of Own of own
-
-
-!getarr[$!a] = '$!b' + '[' + '$!piprep' +']' + '[' + '$!getmem' + ']' + '[' + '$!getmemSite' + ']' +'[' + '$!getmemowner' + ']'
-
-
-  enddo
- enddo
-
- !getarr[1] = 'ITEM NO. [CURRENT ELEMENT] [COMPONENT NAME] [OWNER] [NEXT OWNER]'
-var !getdate clock date
-!repldate = !getdate.replace(' ','')  
-!getpath = 'C:\Temp\Piping_MTO_Report_AllScope_' + '$!repldate' + '.csv'
-!outreport = object FILE('$!getpath')
-!outreport.writefile('WRITE',!getarr)
-$P File saved successfully in $!getpath
-
-
-  
- endmethod 
- 
  -------------------------------------------------------
  Define method .clash()
  
@@ -249,20 +200,11 @@ endmethod
 ---------------------------------------------------------------------------------
  Define method .pra()
  
-do !x from 0 to 360 by 20.5
-
-!!gphViews.look(!!gph3Ddesign1.view, S $!x E35D)
-
-pause 0.05
-
-enddo
-
- --!Width = !!alert.input('set width','')
- --!height = !!alert.input('set heigth','')
- --!Pos = pick pos
- --var !ref Ref of id@
-
-
+ !equipcoll = collect all Sube for ce 
+ 
+ !subse = pos of $!equipcoll 
+ 
+ $p $!subse
  
  endmethod
  
@@ -280,15 +222,10 @@ endmethod
 --------------------------------------------------- 
  define method .modeupdate()
  
- --!!tools.FOR.VAL = true
- --If (!!tools.gridon.val)then
- --!fomd = FOR
+
  If (!this.desmode.val eq 1) then
   FOR
- 
- ---If (!number LT 0) then 
- 
-    ---- !formod = FOR
+
  else
  BAC
  
@@ -365,20 +302,6 @@ Endif
 	Endif
 
 Endmethod
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ------------------------------------------------------------------
