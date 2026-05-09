@@ -68,7 +68,7 @@ setup form !!tools dialog dock left
  button .copys'COPYTYP' tooltip 'COPY SAME COMPONENTS' call |!this.Copysame()| width 10 at xmin.gta ymin+1 
  
  button .earth'EARTHLIST' tooltip 'earthing lug tag number' call |!this.earthing()| width 10 at xmin.rels ymin+1
- button .pra1'PRA-1' tooltip 'PRACTIES' call |!this.pra1()| width 10 at xmin.rels ymin+1
+ button .pra1'PRA' tooltip 'PRACTIES' call |!this.pra()| width 10 at xmin.rels ymin+1
  button .pra3'PRA-3' tooltip 'PRACTIES' call |!this.clash()| width 10 at xmin.rels ymin+1
  --button .repo'WITHIN' tooltip 'With in volume' call |!this.within()| width 10 at xmin.rels ymin+1
  --button .pra4'PRA-4' tooltip 'PRACTIES' call |!this.withinabc()| width 10 at xmin.rels ymin+1
@@ -90,9 +90,16 @@ Define method .earthing()
 
 getwork PIPE/M0C-DES
 
+---Var !cename ce 
 var !auto coll all atta with matchw(name,'*M0C-*-EL-*')
 var !name eval name for all from !auto
 q var !name 
+
+$( !gecurrentatta = site for ce 
+var !currentatta coll all atta for $!gecurrentatta within matchw(name,'*M0C-*-EL-*')
+q var $) 
+
+
 
 endmethod
 
@@ -200,11 +207,10 @@ endmethod
 ---------------------------------------------------------------------------------
  Define method .pra()
  
- !equipcoll = collect all Sube for ce 
+ var !stru coll all POINSP for ce 
+ var !
  
- !subse = pos of $!equipcoll 
- 
- $p $!subse
+ q var !stru
  
  endmethod
  
