@@ -1,0 +1,18 @@
+
+
+define function !!Dwgiso()
+
+  !dwgiso = name of pipe 
+  !Isodrawing = !dwgiso + '-ISO'  
+  $!Isodrawing
+  
+  :TOYO-PIPEREF UNSET
+  --Q :TOYO-PIPEREF
+  GETWORK
+  :TOYO-PIPEREF $!dwgiso
+  $p $!dwgiso
+  $p 'ISO Process Completed....'
+  
+  endfunction
+  
+  
